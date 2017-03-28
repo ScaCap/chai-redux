@@ -1,0 +1,7 @@
+# only deliver es5 code from build
+src/
+test/
+
+.babelrc
+.eslintignore
+.eslintrc
