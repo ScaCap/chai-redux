@@ -1,0 +1,11 @@
+.idea
+../.idea/
+
+.DS_Store
+desktop/.DS_Store
+src/.DS_Store
+
+node_modules
+node_modules_bax
+
+npm-debug.log
