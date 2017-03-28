@@ -25,7 +25,7 @@ describe('async update', () => {
         expect(store).to.eventually.have.state({ updated: true, value: 12 }).notify(done);
     });
 
-    it('should update state eventually', (done) => {x
+    it('should update state eventually', (done) => {
         const store = chai.createReduxStore(reducer, thunk);
         store.dispatch(delayedAction(12));
         expect(store).to.eventually.have.state.like({ value: 12 }).notify(done);

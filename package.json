@@ -4,13 +4,14 @@
   "description": "Chai Helper for testing redux stores",
   "main": "index.js",
   "scripts": {
-    "test": "mocha 'test/**/*' --compilers js:babel-register"
+    "test": "mocha 'test/**/*' --compilers js:babel-register",
+    "prepublish": "babel src/index.js --out-file index.js"
   },
   "keywords": [
     "chai",
     "redux"
   ],
-  "author": "futuranna@schwindelfuchs.de",
+  "author": "engineering@scalable.capital",
   "license": "ISC",
   "devDependencies": {
     "babel-cli": "^6.24.0",
