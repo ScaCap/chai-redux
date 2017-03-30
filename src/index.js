@@ -220,9 +220,18 @@ export default (chai, utils) => {
     Assertion.addMethod('dispatched', function dispatched(expectedAction) {
         const isAsync = utils.flag(this, 'eventually');
         const store = this._obj;
-        let action = _.isString(expectedAction) ? { type: expectedAction } : expectedAction;
+        let action;
 
-        let hasAction = () => _.some(store.__actions, (existingAction) => partialEquals(existingAction, action));
+        const mapStringToAction = value => _.isString(value) ? { type: value } : value;
+
+        let hasAction;
+        if(_.isArray(expectedAction)){
+            action = expectedAction.map(mapStringToAction);
+            hasAction = () => partialEqualList(store.__actions, action);
+        }else {
+            action = _.isString(expectedAction) ? { type: expectedAction } : expectedAction;
+            hasAction = () => _.some(store.__actions, (existingAction) => partialEquals(existingAction, action));
+        }
 
         if (isAsync) {
             const checkForAction = () => {

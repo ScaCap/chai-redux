@@ -29,6 +29,24 @@ describe('dispatched', () => {
             .notify(done);
     });
 
+    it('should eventually have actions TEST-1, TEST', (done) => {
+        const store = chai.createReduxStore(reducer);
+        store.dispatch({type: 'TEST-1'});
+        _.delay(store.dispatch, 50, ({type: 'TEST'}));
+        expect(store).to.have.eventually
+            .dispatched([{type: 'TEST-1'}, {type: 'TEST'}])
+            .notify(done);
+    });
+
+    it('should eventually have actions TEST-1, TEST', (done) => {
+        const store = chai.createReduxStore(reducer);
+        store.dispatch({type: 'TEST-1'});
+        _.delay(store.dispatch, 50, ({type: 'TEST'}));
+        expect(store).to.have.eventually
+            .dispatched(['TEST-1', 'TEST'])
+            .notify(done);
+    });
+
 });
 
 

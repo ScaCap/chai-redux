@@ -241,13 +241,26 @@ exports.default = function (chai, utils) {
 
         var isAsync = utils.flag(this, 'eventually');
         var store = this._obj;
-        var action = _lodash2.default.isString(expectedAction) ? { type: expectedAction } : expectedAction;
+        var action = void 0;
 
-        var hasAction = function hasAction() {
-            return _lodash2.default.some(store.__actions, function (existingAction) {
-                return partialEquals(existingAction, action);
-            });
+        var mapStringToAction = function mapStringToAction(value) {
+            return _lodash2.default.isString(value) ? { type: value } : value;
         };
+
+        var hasAction = void 0;
+        if (_lodash2.default.isArray(expectedAction)) {
+            action = expectedAction.map(mapStringToAction);
+            hasAction = function hasAction() {
+                return partialEqualList(store.__actions, action);
+            };
+        } else {
+            action = _lodash2.default.isString(expectedAction) ? { type: expectedAction } : expectedAction;
+            hasAction = function hasAction() {
+                return _lodash2.default.some(store.__actions, function (existingAction) {
+                    return partialEquals(existingAction, action);
+                });
+            };
+        }
 
         if (isAsync) {
             var checkForAction = function checkForAction() {
