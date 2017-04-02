@@ -27,11 +27,7 @@ chai.use(chaiRedux)
 ## Quick Example
 
 ```
-import chai, { expect } from 'chai';
-import chaiRedux from '../src';
-import thunk from 'redux-thunk';
-
-chai.use(chaiRedux);
+// reducer
 let delayedAction = (value) => (dispatch) => {
     setTimeout(() => {
         dispatch({ type: 'ASYNC_ACTION', value });
@@ -46,19 +42,30 @@ let reducer = (state = { updated: false, value: null }, action) => {
 };
 
 // test
+
+import chai, { expect } from 'chai';
+import chaiRedux from '../src';
+import thunk from 'redux-thunk';
+
+chai.use(chaiRedux);
+
 describe('async update', () => {
 
     it('should eventually have two states', (done) => {
-        const store = chai.createReduxStore(reducer, thunk);
+        const store = chai.createReduxStore({reducer, middlewares: [thunk]});
         store.dispatch(delayedAction(13));
-        expect(store).to.eventually.have.states([{ updated: false, value: null }, { updated: true, value: 13 }])
+        expect(store).to.eventually.have
+            .state({ updated: false, value: null })
+            .then.state({ updated: true, value: 13 })
             .notify(done);
     });
 
     it('should eventually have dispatched action ASYNC_ACTION', (done) => {
         const store = chai.createReduxStore(reducer, thunk);
         store.dispatch(delayedAction(13));
-        expect(store).to.eventually.have.dispatched('ASYNC_ACTION').notify(done);
+        expect(store).to.eventually.have
+            .dispatched('ASYNC_ACTION')
+            .notify(done);
     });
 
 });
@@ -69,14 +76,15 @@ describe('async update', () => {
 
 ### Creating Store
 
-**chai.createReduxStore(reducer(s), middleware(s))**
+**chai.createReduxStore({reducer, middlewares, initialState)})**
 
 #### Arguments:
 
-1. reducer(s) (Function, Object): 
+1. reducer (Function, Object): 
  1.1 reducer (Function): A reducing function that returns the next state tree, given the current state tree and an action to handle
  1.2 reducers (Object): An object whose values correspond to different reducing functions that need to be combined into one. See the notes below for some rules every passed reducer must follow.
-2. middleware(s) (Function, [Function]) : Optional functions that conform to the Redux middleware API, single one or multiple as Array.
+2. middlewares (Function, [Function]) : Optional functions that conform to the Redux middleware API, single one or multiple as Array.
+3. initialState (Object): initial state of store
 
 #### Example
 
@@ -87,18 +95,19 @@ import thunk from 'redux-thunk';
 import reducerA from '//';
 import reducerB from '//';
 
+chai.use(chaiRedux);
+
 describe('create test store', () => {
 
-    it('should work', () => {
-        // one store, no middleware
-        const store = chai.createReduxStore(reducerA);
-        // one store with thunk middleware
-        store = chai.createReduxStore(reducerA, thunk);
-        // multiple reducers and middlewares
-        store = chai.createReduxStore({
-            a: reducerA,
-            b: reducerB
-        }, [thunk, ...]);
+    it('should create store', () => {
+        const store = chai.createReduxStore({
+            reducer: {
+                a: reducerA,
+                b: reducerB
+            },
+            middlewares: [thunk],
+            initialState: {a: {/* ... /*}, b: {/* ... /*}}
+        });
     });
 
 });
@@ -108,31 +117,75 @@ describe('create test store', () => {
 ### Assertions
 
 **.state(state: any)**
-**.states(states: Array)**
 
- Asserts that store state history contains `state` or `states`. 
- Will compare states using deep equal. 
+Asserts that store state history contains *state*, using deep equal. 
 
 ```
-expect(store).to.have.state({loading: false})
-expect(store).to.have.states([{loaded: false}, {loaded: true}])
-```
-
-In combination with **.eventually** it will wait till store history contains state.
-   
-```
-expect(store).to.have.eventually.state({loading: true}).notify(done)
-store.dispatch({type: 'LOAD'})
-```   
+expect(store).to.have.state({loading: false, value: null});
+expect(store).not.to.have.state({loading: false, value: null});
+expect(store).to.have
+    .state({loading: false, value: null})
+    .and.state({loading: true, value: 42});
+``` 
 
 **.state.like(state: any)**
-**.states.like(states: Array)**
 
- Asserts that store state history contains all `states` or `state`. 
- Will performs a partial deep comparison. 
+Asserts that store state history contains *state*, using partial deep comparison. 
 
 ```
-expect(store).to.have.states.like([{loaded: false}, {loaded: true, data: 'unicorn'}])
-```
+expect(store).to.have.state.like({loading: false});
+expect(store).to.have
+    .state.like({value: null})
+    .and.state.like({value: 42});
+``` 
 
-Can also be used in combination with **.eventually**.
+**.then.state(state: any)**
+
+Asserts that *state* is next state in state history.
+
+```
+expect(store).to.have
+    .state({loading: false})
+    .then.state({loading: true});
+``` 
+
+then.state and then.dispatched cannot be mixed.
+
+**.dispatched(action: String, Object)**
+
+Asserts that store action history contains *action*, using partial deep comparison.
+
+```
+expect(store).to.have
+    .dispatched({type: 'LOAD'});
+expect(store).to.have
+    .dispatched('LOAD');
+``` 
+
+**.then.dispatched(state: any)**
+
+Asserts that *state* is next state in state history.
+
+```
+expect(store).to.have
+    .dispatched('LOAD')
+    .then.dispatched({type: 'RESET'});
+``` 
+
+then.state and then.dispatched cannot be mixed.
+
+**.eventually**, **.notify(done: function)**
+
+Asserts that history contains *state* or *action*. 
+It will wait till store history contains *state* or *action*. 
+Once state is found `done` is called.
+
+```
+expect(store).to.have.eventually
+    .state({loading: false, value: null})
+    .and.state.like({loading: true})
+    .and.dispatched('LOAD')
+    .notify(done);
+// test
+store.dispatch({type: 'LOAD'});
+```
