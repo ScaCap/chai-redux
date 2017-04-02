@@ -6,8 +6,8 @@ This is an extension plugin for chai assertion library to test complex redux sto
 
 Required peer dependencies:
 
-- chai ^3.5.0
-- redux ^3.6.0
+- chai >=1.1.0
+- redux >=3.1.3
 
 ```
 $ npm run install chai-redux
