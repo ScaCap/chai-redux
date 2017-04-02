@@ -1,7 +1,7 @@
 {
   "name": "chai-redux",
   "version": "0.0.1",
-  "description": "Chai Helper for testing redux stores",
+  "description": "Chai Helper for testing (async) redux stores",
   "main": "index.js",
   "scripts": {
     "test": "mocha 'test/**/*' --compilers js:babel-register",
