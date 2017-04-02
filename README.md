@@ -81,9 +81,9 @@ describe('async update', () => {
 #### Arguments:
 
 1. reducer (Function, Object): 
- 1.1 reducer (Function): A reducing function that returns the next state tree, given the current state tree and an action to handle
- 1.2 reducers (Object): An object whose values correspond to different reducing functions that need to be combined into one. See the notes below for some rules every passed reducer must follow.
-2. middlewares (Function, [Function]) : Optional functions that conform to the Redux middleware API, single one or multiple as Array.
+ 1.1 Function: A reducing function that returns the next state tree, given the current state tree and an action to handle
+ 1.2 Object: An object whose values correspond to different reducing functions that need to be combined into one.
+2. middlewares ([Function]) : Optional functions that conform to the Redux middleware API.
 3. initialState (Object): initial state of store
 
 #### Example
@@ -178,7 +178,7 @@ then.state and then.dispatched cannot be mixed.
 
 Asserts that history contains *state* or *action*. 
 It will wait till store history contains *state* or *action*. 
-Once state is found `done` is called.
+Once state is found *done* is called.
 
 ```
 expect(store).to.have.eventually
