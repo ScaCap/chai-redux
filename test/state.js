@@ -1,7 +1,7 @@
 import chai, { expect } from 'chai';
 import chaiRedux from '../src';
 import reducer from './example-reducer';
-import _ from 'lodash';
+import _delay from 'lodash.delay';
 
 chai.use(chaiRedux);
 
@@ -19,7 +19,7 @@ describe('states', () => {
         store.dispatch({ type: 'TRIGGER' });
         store.dispatch({ type: 'LOADED', firstName: 'Jane', lastName: 'Doe' });
         store.dispatch({ type: 'LOADED', firstName: 'Max', lastName: 'Mustermann' });
-        _.delay(store.dispatch, 50, { type: 'LOADING_ERROR' });
+        _delay(store.dispatch, 50, { type: 'LOADING_ERROR' });
     });
 
     it('should have all states', () => {

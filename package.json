@@ -18,7 +18,7 @@
     "babel-preset-env": "^1.2.2",
     "chai": "^3.5.0",
     "isomorphic-fetch": "^2.2.1",
-    "lodash": "^4.17.4",
+    "lodash.delay": "^4.1.1",
     "mocha": "^3.2.0",
     "redux": "^3.6.0",
     "redux-saga": "^0.14.3",
@@ -27,5 +27,10 @@
   "peerDependencies": {
     "chai": "^3.5.0",
     "redux": "^3.6.0"
+  },
+  "dependencies": {
+    "lodash.defaults": "^4.2.0",
+    "lodash.isequal": "^4.4.0",
+    "lodash.pick": "^4.4.0"
   }
 }

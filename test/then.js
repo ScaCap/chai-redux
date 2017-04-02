@@ -1,7 +1,7 @@
 import chai, { expect } from 'chai';
 import chaiRedux from '../src';
 import reducer from './example-reducer';
-import _ from 'lodash';
+import _delay from 'lodash.delay';
 
 chai.use(chaiRedux);
 
@@ -21,7 +21,7 @@ describe('then', () => {
         store.dispatch({ type: 'TRIGGER' });
         store.dispatch({ type: 'LOADED', firstName: 'Jane', lastName: 'Doe' });
         store.dispatch({ type: 'LOADED', firstName: 'Max', lastName: 'Mustermann' });
-        _.delay(store.dispatch, 50, { type: 'LOADING_ERROR' });
+        _delay(store.dispatch, 50, { type: 'LOADING_ERROR' });
     });
 
     it('should have all chained states', () => {
@@ -37,6 +37,12 @@ describe('then', () => {
             .then.have.state({ value: { firstName: 'Jane', lastName: 'Doe' }, loading: false, loaded: true })
             .then.have.state({ value: { firstName: 'Max', lastName: 'Mustermann' }, loading: false, loaded: true })
             .then.have.state({ value: null, loading: false, loaded: false });
+    });
+
+    it('should not fail if then is used as first state check', () => {
+        let store = chai.createReduxStore({ reducer: reducer });
+        expect(store).to.have
+            .then.state({ value: null, loading: false, loaded: false });
     });
 
     it('should only work in correct order', () => {

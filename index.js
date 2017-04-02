@@ -4,9 +4,17 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
-var _lodash = require('lodash');
+var _lodash = require('lodash.isequal');
 
 var _lodash2 = _interopRequireDefault(_lodash);
+
+var _lodash3 = require('lodash.pick');
+
+var _lodash4 = _interopRequireDefault(_lodash3);
+
+var _lodash5 = require('lodash.defaults');
+
+var _lodash6 = _interopRequireDefault(_lodash5);
 
 var _redux = require('redux');
 
@@ -14,25 +22,28 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
-var NO_REDUX_SPY = 'expected #{act} to be redux store spy. ' + 'You can create a redux store spy like this: chai.createReduxStore(reducers, middleware)';
-
 var partialEquals = function partialEquals(obj, exptected) {
-    return _lodash2.default.chain(obj).pick(_lodash2.default.keys(exptected)).isEqual(exptected).value();
+    var allExpectedKeys = Object.keys(exptected);
+    var partialObject = (0, _lodash4.default)(obj, allExpectedKeys);
+    return (0, _lodash2.default)(partialObject, exptected);
 };
 
-var partialEqualList = function partialEqualList(objs, exptecteds) {
-    return _lodash2.default.chain(exptecteds).map(function (state) {
-        return _lodash2.default.some(objs, state);
-    }).every(function (included) {
-        return included;
-    }).value();
+var isFunction = function isFunction(value) {
+    return typeof value === 'function';
+};
+var isString = function isString(value) {
+    return typeof value === 'string';
 };
 
 exports.default = function (chai, utils) {
     var Assertion = chai.Assertion;
 
 
-    chai.createReduxStore = function (reducers, middleware) {
+    chai.createReduxStore = function (_ref) {
+        var reducer = _ref.reducer,
+            middleware = _ref.middleware,
+            initialState = _ref.initialState;
+
         var reduxStore = void 0;
         var history = function history(store) {
             return function (next) {
@@ -47,20 +58,20 @@ exports.default = function (chai, utils) {
             };
         };
 
-        var storeReducers = reducers;
-        if (!_lodash2.default.isFunction(reducers)) {
-            storeReducers = (0, _redux.combineReducers)(reducers);
+        var storeReducers = reducer;
+        if (!isFunction(reducer)) {
+            storeReducers = (0, _redux.combineReducers)(reducer);
         }
         var middlewareAsArray = middleware || [];
-        if (_lodash2.default.isFunction(middleware)) {
+        if (isFunction(middleware)) {
             middlewareAsArray = [middleware];
         }
         middlewareAsArray.push(history);
 
-        reduxStore = (0, _redux.createStore)(storeReducers, _redux.applyMiddleware.apply(undefined, _toConsumableArray(middlewareAsArray)));
+        reduxStore = (0, _redux.createStore)(storeReducers, initialState, _redux.applyMiddleware.apply(undefined, _toConsumableArray(middlewareAsArray)));
         var action = { type: '@@INIT' };
         var state = reduxStore.getState();
-        _lodash2.default.assign(reduxStore, {
+        Object.assign(reduxStore, {
             __isProxyStore: true,
             __actions: [action],
             __states: [state],
@@ -77,63 +88,58 @@ exports.default = function (chai, utils) {
         };
     };
 
-    var checkSingleState = function checkSingleState(expectedState) {
-        var _this = this;
-
-        var compareState = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _lodash2.default.isEqual;
-
-        var store = this._obj;
-        var isAsync = utils.flag(this, 'eventually');
-        if (isAsync === true) {
-            var checkForState = function checkForState() {
-                if (_lodash2.default.some(store.__states, function (state) {
-                    return compareState(state, expectedState);
-                })) {
-                    utils.flag(_this, 'notify.done', true);
-                } else {
-                    setTimeout(checkForState, 1);
-                }
-            };
-            checkForState();
-        } else {
-            // let currentState = store.getState();
-            this.assert(_lodash2.default.some(store.__states, function (state) {
-                return compareState(state, expectedState);
-            }), 'expected state history to contain #{act}', 'expected state history not to contain #{act}', expectedState, store.__states);
-            utils.flag(this, 'notify.done', true);
+    var defaultOptions = {
+        compareState: _lodash2.default,
+        messages: {
+            positive: 'expected state history #{act} to contain #{exp}',
+            negated: 'expected state history #{act} not to contain #{exp}'
         }
     };
 
-    var hasAllStatesEquals = function hasAllStatesEquals(states, expectedStates) {
-        var clonedStates = _lodash2.default.clone(states);
-        var removedAllFoundItems = _lodash2.default.chain(expectedStates).filter(function (state) {
-            var result = _lodash2.default.pull(clonedStates, state);
-            return !(result && !!result[0]);
-        }).value();
+    var verifyValues = function verifyValues(expectedState) {
+        var _this = this;
 
-        return removedAllFoundItems.length === 0;
-    };
+        var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
-    var checkStates = function checkStates(expectedStates) {
-        var _this2 = this;
+        var _defaults2 = (0, _lodash6.default)(options, defaultOptions),
+            compareState = _defaults2.compareState,
+            values = _defaults2.values;
 
-        var hasAllStates = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : hasAllStatesEquals;
+        var isAsync = utils.flag(this, 'eventually') || false;
+        var isChained = utils.flag(this, 'then') || false;
+        var lastIndex = utils.flag(this, 'lastIndex');
+        utils.flag(this, 'then', false);
+        var hasValue = function hasValue() {
+            if (isChained) {
+                return values().length > lastIndex + 1 && compareState(values()[lastIndex + 1], expectedState);
+            } else {
+                return !!values().find(function (state) {
+                    return compareState(state, expectedState);
+                });
+            }
+        };
 
-        var store = this._obj;
-        var isAsync = utils.flag(this, 'eventually');
+        var updateLastIndex = function updateLastIndex() {
+            var index = values().findIndex(function (state) {
+                return compareState(state, expectedState);
+            });
+            utils.flag(_this, 'lastIndex', index);
+        };
 
-        if (isAsync === true) {
-            var checkForState = function checkForState() {
-                if (hasAllStates(store.__states, expectedStates)) {
-                    utils.flag(_this2, 'notify.done', true);
+        if (isAsync === true && !hasValue()) {
+            var checkForValue = function checkForValue() {
+                if (hasValue()) {
+                    updateLastIndex();
+                    utils.flag(_this, 'notify.done', true);
                 } else {
-                    setTimeout(checkForState, 1);
+                    setTimeout(checkForValue, 1);
                 }
             };
-            checkForState();
+            checkForValue();
         } else {
-            this.assert(hasAllStates(store.__states, expectedStates), 'expected states history to include #{exp}, history is #{act}', 'expected states history not to include #{exp}, history is #{act} ', JSON.stringify(expectedStates), JSON.stringify(store.__states));
+            this.assert(hasValue(), options.messages.positive, options.messages.negated, JSON.stringify(expectedState), JSON.stringify(values()));
             utils.flag(this, 'notify.done', true);
+            updateLastIndex();
         }
     };
 
@@ -150,6 +156,23 @@ exports.default = function (chai, utils) {
     Assertion.addProperty('eventually', checkIfIsStoreProxyAndAddFlag('eventually'));
 
     /**
+     * ### .eventually
+     *
+     * Sets the `eventually` flag
+     * later used by the `states`, `state` and `like` assertion.
+     *
+     *     expect(store).to.eventually.have.state({loaded: true});
+     *     expect(store).to.eventually.have.state.like({loaded: true});
+     *
+     */
+    Assertion.addProperty('then', function () {
+        checkIfIsStoreProxyAndAddFlag('then').call(this, 'then');
+        if (utils.flag(this, 'lastIndex') === undefined) {
+            utils.flag(this, 'lastIndex', -1);
+        }
+    });
+
+    /**
      * ### .state(state)
      *
      * Asserts that store state history contains `state`. Will use deep equal to compare objects
@@ -164,51 +187,16 @@ exports.default = function (chai, utils) {
      * @param {...String|Array|Object} state
      *
      */
-    Assertion.addChainableMethod('state', checkSingleState, checkIfIsStoreProxyAndAddFlag('state'));
+    Assertion.addChainableMethod('state', function (expectedState) {
+        var _this2 = this;
+
+        verifyValues.call(this, expectedState, { values: function values() {
+                return _this2._obj.__states;
+            } });
+    }, checkIfIsStoreProxyAndAddFlag('state'));
 
     /**
-     * ### .states([states])
-     *
-     * Asserts that store state history contains all `states`. Will use deep equal to compare objects.
-     *
-     * When used in conjunction with `eventually` it will wait until store state history
-     * contains all `states` or timeout.
-     *
-     *     expect(store).to.have.states([{b: 'a'}]);
-     *     expect(store).not.to.have.states([{a: 'b'}, {c: 'd'}]);
-     *     expect(store).to.eventually.have.states([{loaded: false}, {loaded: true}]);
-     *
-     * @param {...Array} states
-     *
-     */
-    Assertion.addChainableMethod('states', checkStates, checkIfIsStoreProxyAndAddFlag('states'));
-
-    /**
-     * ### .notify
-     *
-     * Will trigger callback once `state`, `states` or `like` have passed.
-     * Can be used to notify testing framework that test is completed
-     *
-     *     expect(store).to.eventually.have.state({loaded: true}).notify(done);
-     *
-     */
-    Assertion.addMethod('notify', function () {
-        var _this3 = this;
-
-        var notify = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _lodash2.default.noop;
-
-        var isDone = function isDone() {
-            if (utils.flag(_this3, 'notify.done')) {
-                notify();
-            } else {
-                setTimeout(isDone, 1);
-            }
-        };
-        isDone();
-    });
-
-    /**
-     * ### .states(state|[states])
+     * ### .like(state)
      *
      * Asserts that store state history contains all `states` or `state`. Will performs a partial deep
      * comparison. returning true if `state` has equivalent property values.
@@ -223,57 +211,62 @@ exports.default = function (chai, utils) {
      *
      */
     Assertion.addMethod('like', function (expectedState) {
+        var _this3 = this;
+
         var isState = utils.flag(this, 'state');
-        var isStates = utils.flag(this, 'states');
         if (isState) {
-            var compareState = partialEquals;
-            checkSingleState.call(this, expectedState, compareState);
-        } else if (isStates) {
-            var compareStatesLike = partialEqualList;
-            checkStates.call(this, expectedState, compareStatesLike);
+            verifyValues.call(this, expectedState, {
+                compareState: partialEquals,
+                values: function values() {
+                    return _this3._obj.__states;
+                },
+                messages: {
+                    positive: 'expected state history #{act} to contain #{exp} (partial equals)',
+                    negated: 'expected state history #{act} not to contain #{exp} (partial equals)'
+                }
+            });
         } else {
-            throw new chai.AssertionError('like must only be used in combination with state or states');
+            throw new chai.AssertionError('like must only be used in combination with state');
         }
     });
 
     Assertion.addMethod('dispatched', function dispatched(expectedAction) {
         var _this4 = this;
 
-        var isAsync = utils.flag(this, 'eventually');
-        var store = this._obj;
-        var action = void 0;
+        var action = isString(expectedAction) ? { type: expectedAction } : expectedAction;
+        verifyValues.call(this, action, {
+            compareState: partialEquals,
+            values: function values() {
+                return _this4._obj.__actions;
+            },
+            messages: {
+                positive: 'expected action history #{act} to contain #{exp} (partial equals)',
+                negated: 'expected action history #{act} not to contain #{exp} (partial equals)'
+            }
+        });
+    });
 
-        var mapStringToAction = function mapStringToAction(value) {
-            return _lodash2.default.isString(value) ? { type: value } : value;
+    /**
+     * ### .notify
+     *
+     * Will trigger callback once `state`, `states` or `like` have passed.
+     * Can be used to notify testing framework that test is completed
+     *
+     *     expect(store).to.eventually.have.state({loaded: true}).notify(done);
+     *
+     */
+    Assertion.addMethod('notify', function () {
+        var _this5 = this;
+
+        var notify = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : function () {};
+
+        var isDone = function isDone() {
+            if (utils.flag(_this5, 'notify.done')) {
+                notify();
+            } else {
+                setTimeout(isDone, 1);
+            }
         };
-
-        var hasAction = void 0;
-        if (_lodash2.default.isArray(expectedAction)) {
-            action = expectedAction.map(mapStringToAction);
-            hasAction = function hasAction() {
-                return partialEqualList(store.__actions, action);
-            };
-        } else {
-            action = _lodash2.default.isString(expectedAction) ? { type: expectedAction } : expectedAction;
-            hasAction = function hasAction() {
-                return _lodash2.default.some(store.__actions, function (existingAction) {
-                    return partialEquals(existingAction, action);
-                });
-            };
-        }
-
-        if (isAsync) {
-            var checkForAction = function checkForAction() {
-                if (hasAction()) {
-                    utils.flag(_this4, 'notify.done', true);
-                } else {
-                    setTimeout(checkForAction, 1);
-                }
-            };
-            checkForAction();
-        } else {
-            this.assert(hasAction(), 'expected action history to include #{exp}, history is #{act}', 'expected action to not be #{exp} ', expectedAction, store.__actions);
-            utils.flag(this, 'notify.done', true);
-        }
+        isDone();
     });
 };

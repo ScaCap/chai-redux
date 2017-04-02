@@ -1,7 +1,7 @@
 import chai, { expect } from 'chai';
 import chaiRedux from '../src';
 import reducer from './example-reducer';
-import _ from 'lodash';
+import _delay from 'lodash.delay';
 
 chai.use(chaiRedux);
 
@@ -23,7 +23,7 @@ describe('dispatched', () => {
 
     it('should eventually have action TEST', (done) => {
         const store = chai.createReduxStore({ reducer });
-        _.delay(store.dispatch, 50, ({ type: 'TEST' }));
+        _delay(store.dispatch, 50, ({ type: 'TEST' }));
         expect(store).to.have.eventually
             .dispatched('TEST')
             .notify(done);
@@ -32,7 +32,7 @@ describe('dispatched', () => {
     it('should eventually have actions TEST-1 and TEST', (done) => {
         const store = chai.createReduxStore({ reducer });
         store.dispatch({ type: 'TEST-1' });
-        _.delay(store.dispatch, 50, ({ type: 'TEST' }));
+        _delay(store.dispatch, 50, ({ type: 'TEST' }));
         expect(store).to.have.eventually
             .dispatched([{ type: 'TEST-1' }])
             .and.dispatched({ type: 'TEST' })
@@ -42,7 +42,7 @@ describe('dispatched', () => {
     it('should eventually have actions TEST-1, TEST', (done) => {
         const store = chai.createReduxStore({ reducer });
         store.dispatch({ type: 'TEST-1' });
-        _.delay(store.dispatch, 50, ({ type: 'TEST' }));
+        _delay(store.dispatch, 50, ({ type: 'TEST' }));
         expect(store).to.have.eventually
             .dispatched('TEST-1')
             .and.dispatched('TEST')
