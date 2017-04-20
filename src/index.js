@@ -28,6 +28,14 @@ export default (chai, utils) => {
      */
     chai.createReduxStore = ({ reducer, middleware, initialState }) => {
         let reduxStore;
+        /**
+         * middleware
+         * --------------
+         * When action is dispatched it will
+         * - store action
+         * - store nextState
+         * - notify all (internal) listeners
+         */
         const history = store => next => action => {
             reduxStore.__actions.push(action);
             let result;
@@ -41,6 +49,7 @@ export default (chai, utils) => {
             let state = reduxStore.getState();
             reduxStore.__states.push(state);
             reduxStore.__history.push({ action, state: state });
+            reduxStore.__listener.forEach(listener => {listener()});
             return result;
         };
 
@@ -61,7 +70,16 @@ export default (chai, utils) => {
             __isProxyStore: true,
             __actions: [action],
             __states: [state],
-            __history: [{ state, action }]
+            __history: [{ state, action }],
+            __listener: [],
+            // will notify listener when an action is dispatched
+            __subscribe: function (listener) {
+                this.__listener.push(listener);
+                return () => {
+                    this.__listener = this.__listener.filter(l => l !== listener);
+                };
+            }
+
         });
         return reduxStore;
     };
@@ -120,14 +138,15 @@ export default (chai, utils) => {
         utils.flag(this, 'then', false);
 
         if (isAsync === true) {
+            let unsubscribe;
             const checkForValue = () => {
                 if (hasValue()) {
                     updateAssertions(true);
                     updateLastIndex();
-                } else {
-                    setTimeout(checkForValue, 1);
+                    unsubscribe();
                 }
             };
+            unsubscribe = this._obj.__subscribe(checkForValue);
             checkForValue();
         } else {
             updateAssertions(hasValue());
@@ -286,14 +305,15 @@ export default (chai, utils) => {
      *
      */
     Assertion.addMethod('notify', function (notify = () => {}) {
+        let unsubscribe;
         const isDone = () => {
             const assertions = utils.flag(this, 'assertions') || [];
             if (assertions.filter(assertion => assertion).length === assertions.length) {
+                unsubscribe();
                 notify();
-            } else {
-                setTimeout(isDone, 1);
             }
         };
+        unsubscribe = this._obj.__subscribe(isDone);
         isDone();
     });
 };

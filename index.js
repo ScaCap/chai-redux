@@ -56,6 +56,14 @@ exports.default = function (chai, utils) {
             initialState = _ref.initialState;
 
         var reduxStore = void 0;
+        /**
+         * middleware
+         * --------------
+         * When action is dispatched it will
+         * - store action
+         * - store nextState
+         * - notify all (internal) listeners
+         */
         var history = function history(store) {
             return function (next) {
                 return function (action) {
@@ -70,6 +78,9 @@ exports.default = function (chai, utils) {
                     var state = reduxStore.getState();
                     reduxStore.__states.push(state);
                     reduxStore.__history.push({ action: action, state: state });
+                    reduxStore.__listener.forEach(function (listener) {
+                        listener();
+                    });
                     return result;
                 };
             };
@@ -92,7 +103,20 @@ exports.default = function (chai, utils) {
             __isProxyStore: true,
             __actions: [action],
             __states: [state],
-            __history: [{ state: state, action: action }]
+            __history: [{ state: state, action: action }],
+            __listener: [],
+            // will notify listener when an action is dispatched
+            __subscribe: function __subscribe(listener) {
+                var _this = this;
+
+                this.__listener.push(listener);
+                return function () {
+                    _this.__listener = _this.__listener.filter(function (l) {
+                        return l !== listener;
+                    });
+                };
+            }
+
         });
         return reduxStore;
     };
@@ -114,7 +138,7 @@ exports.default = function (chai, utils) {
     };
 
     var verifyValues = function verifyValues(expectedState) {
-        var _this = this;
+        var _this2 = this;
 
         var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
@@ -126,14 +150,14 @@ exports.default = function (chai, utils) {
         var isAsync = utils.flag(this, 'eventually') || false;
         var isChained = utils.flag(this, 'then') || false;
         var lastIndex = function lastIndex() {
-            return utils.flag(_this, 'lastIndex');
+            return utils.flag(_this2, 'lastIndex');
         };
         var chainIndex = utils.flag(this, 'chainIndex') || 0;
 
         var updateAssertions = function updateAssertions(value) {
-            var assertions = utils.flag(_this, 'assertions') || [];
+            var assertions = utils.flag(_this2, 'assertions') || [];
             assertions[chainIndex] = value;
-            utils.flag(_this, 'assertions', assertions);
+            utils.flag(_this2, 'assertions', assertions);
         };
 
         // assert current value
@@ -152,7 +176,7 @@ exports.default = function (chai, utils) {
             var index = values().findIndex(function (state) {
                 return compareState(state, expectedState);
             });
-            utils.flag(_this, 'lastIndex', index);
+            utils.flag(_this2, 'lastIndex', index);
         };
 
         // assertion is false by default
@@ -163,14 +187,15 @@ exports.default = function (chai, utils) {
         utils.flag(this, 'then', false);
 
         if (isAsync === true) {
+            var unsubscribe = void 0;
             var checkForValue = function checkForValue() {
                 if (hasValue()) {
                     updateAssertions(true);
                     updateLastIndex();
-                } else {
-                    setTimeout(checkForValue, 1);
+                    unsubscribe();
                 }
             };
+            unsubscribe = this._obj.__subscribe(checkForValue);
             checkForValue();
         } else {
             updateAssertions(hasValue());
@@ -233,10 +258,10 @@ exports.default = function (chai, utils) {
      *
      */
     Assertion.addChainableMethod('state', function (expectedState) {
-        var _this2 = this;
+        var _this3 = this;
 
         verifyValues.call(this, expectedState, { values: function values() {
-                return _this2._obj.__states;
+                return _this3._obj.__states;
             } });
     }, checkIfIsStoreProxyAndAddFlag('state'));
 
@@ -263,14 +288,14 @@ exports.default = function (chai, utils) {
      *
      */
     Assertion.addMethod('like', function (expectedState) {
-        var _this3 = this;
+        var _this4 = this;
 
         var isState = utils.flag(this, 'state');
         if (isState) {
             verifyValues.call(this, expectedState, {
                 compareState: partialEquals,
                 values: function values() {
-                    return _this3._obj.__states;
+                    return _this4._obj.__states;
                 },
                 messages: {
                     positive: 'expected state history #{act} to contain #{exp} (partial equals)',
@@ -311,13 +336,13 @@ exports.default = function (chai, utils) {
      *
      */
     Assertion.addMethod('dispatched', function dispatched(expectedAction) {
-        var _this4 = this;
+        var _this5 = this;
 
         var action = isString(expectedAction) ? { type: expectedAction } : expectedAction;
         verifyValues.call(this, action, {
             compareState: partialEquals,
             values: function values() {
-                return _this4._obj.__actions;
+                return _this5._obj.__actions;
             },
             messages: {
                 positive: 'expected action history #{act} to contain #{exp} (partial equals)',
@@ -336,20 +361,21 @@ exports.default = function (chai, utils) {
      *
      */
     Assertion.addMethod('notify', function () {
-        var _this5 = this;
+        var _this6 = this;
 
         var notify = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : function () {};
 
+        var unsubscribe = void 0;
         var isDone = function isDone() {
-            var assertions = utils.flag(_this5, 'assertions') || [];
+            var assertions = utils.flag(_this6, 'assertions') || [];
             if (assertions.filter(function (assertion) {
                 return assertion;
             }).length === assertions.length) {
+                unsubscribe();
                 notify();
-            } else {
-                setTimeout(isDone, 1);
             }
         };
+        unsubscribe = this._obj.__subscribe(isDone);
         isDone();
     });
 };
