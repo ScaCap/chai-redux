@@ -1,8 +1,25 @@
 # Chai Redux
 
-This is an extension plugin for chai assertion library to test complex redux stores.
+This is an extension plugin for chai assertion library for testing redux stores.
 
-## Installation
+Because testing should be as easy as:
+
+```
+const store = chai.createReduxStore({reducer, middleware: [thunk]});
+// when
+store.dispatch(fetchData());
+// then
+expect(store).to.eventually.have
+    .dispatched('FETCH')
+    .then.dispatched(
+        {type: 'SUCCESSFUL', name: 'redux'})
+    .notify(done);
+```
+
+
+For more insights read [Why I created chai-redux](https://medium.com/p/9704563fedef)
+
+## Install
 
 Required peer dependencies:
 
@@ -20,55 +37,6 @@ import chai from 'chai'
 import chaiRedux from 'chai-redux'
 
 chai.use(chaiRedux)
-
-```
-
-
-## Quick Example
-
-```
-// reducer
-let delayedAction = (value) => (dispatch) => {
-    setTimeout(() => {
-        dispatch({ type: 'ASYNC_ACTION', value });
-    }, 20);
-};
-
-let reducer = (state = { updated: false, value: null }, action) => {
-    if (action.type === 'ASYNC_ACTION') {
-        return { updated: true, value: action.value };
-    }
-    return state;
-};
-
-// test
-
-import chai, { expect } from 'chai';
-import chaiRedux from '../src';
-import thunk from 'redux-thunk';
-
-chai.use(chaiRedux);
-
-describe('async update', () => {
-
-    it('should eventually have two states', (done) => {
-        const store = chai.createReduxStore({reducer, middlewares: [thunk]});
-        store.dispatch(delayedAction(13));
-        expect(store).to.eventually.have
-            .state({ updated: false, value: null })
-            .then.state({ updated: true, value: 13 })
-            .notify(done);
-    });
-
-    it('should eventually have dispatched action ASYNC_ACTION', (done) => {
-        const store = chai.createReduxStore(reducer, thunk);
-        store.dispatch(delayedAction(13));
-        expect(store).to.eventually.have
-            .dispatched('ASYNC_ACTION')
-            .notify(done);
-    });
-
-});
 
 ```
 
@@ -178,7 +146,7 @@ then.state and then.dispatched cannot be mixed.
 
 Asserts that history contains *state* or *action*. 
 It will wait till store history contains *state* or *action*. 
-Once state is found *done* is called.
+Once state is found *done* is notified.
 
 ```
 expect(store).to.have.eventually
