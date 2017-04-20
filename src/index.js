@@ -83,15 +83,25 @@ export default (chai, utils) => {
     };
 
     let verifyValues = function (expectedState, options = {}) {
+        // declare and initiate
         let { compareState, values } = _defaults(options, defaultOptions);
         const isAsync = utils.flag(this, 'eventually') || false;
         const isChained = utils.flag(this, 'then') || false;
-        const lastIndex = utils.flag(this, 'lastIndex');
-        utils.flag(this, 'then', false);
+        const lastIndex = () => utils.flag(this, 'lastIndex');
+        const chainIndex = utils.flag(this, 'chainIndex') || 0;
+
+        const updateAssertions = (value) => {
+            const assertions = utils.flag(this, 'assertions') || [];
+            assertions[chainIndex] = value;
+            utils.flag(this, 'assertions', assertions);
+        };
+
+        // assert current value
         const hasValue = () => {
             if (isChained) {
-                return values().length > lastIndex + 1
-                    && compareState(values()[lastIndex + 1], expectedState)
+                let nextIndex = lastIndex() + 1;
+                return values().length > nextIndex
+                    && compareState(values()[nextIndex], expectedState)
             } else {
                 return !!values().find((state) => compareState(state, expectedState));
             }
@@ -102,25 +112,33 @@ export default (chai, utils) => {
             utils.flag(this, 'lastIndex', index);
         };
 
-        if (isAsync === true && !hasValue()) {
+        // assertion is false by default
+        updateAssertions(false);
+        // update chain count
+        utils.flag(this, 'chainIndex', chainIndex + 1);
+        // reset then flag. Only then can set it to true
+        utils.flag(this, 'then', false);
+
+        if (isAsync === true) {
             const checkForValue = () => {
                 if (hasValue()) {
+                    updateAssertions(true);
                     updateLastIndex();
-                    utils.flag(this, 'notify.done', true);
                 } else {
                     setTimeout(checkForValue, 1);
                 }
             };
             checkForValue();
         } else {
+            updateAssertions(hasValue());
+            const assertions = utils.flag(this, 'assertions') || [];
             this.assert(
-                hasValue(),
+                assertions.filter(assertion => assertion).length === assertions.length,
                 options.messages.positive,
                 options.messages.negated,
                 JSON.stringify(expectedState),
                 JSON.stringify(values())
             );
-            utils.flag(this, 'notify.done', true);
             updateLastIndex();
         }
 
@@ -269,7 +287,8 @@ export default (chai, utils) => {
      */
     Assertion.addMethod('notify', function (notify = () => {}) {
         const isDone = () => {
-            if (utils.flag(this, 'notify.done')) {
+            const assertions = utils.flag(this, 'assertions') || [];
+            if (assertions.filter(assertion => assertion).length === assertions.length) {
                 notify();
             } else {
                 setTimeout(isDone, 1);

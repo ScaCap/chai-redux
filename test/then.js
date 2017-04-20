@@ -7,6 +7,36 @@ chai.use(chaiRedux);
 
 describe('then', () => {
 
+    it('weird chains - dispatched', (done) => {
+        let store = chai.createReduxStore({ reducer });
+        store.dispatch({ type: 'LOADING_ERROR' });
+        store.dispatch({ type: 'LOADED', firstName: 'Max', lastName: 'Mustermann' });
+        _delay(store.dispatch, 50, { type: 'TRIGGER' });
+        _delay(store.dispatch, 10, { type: 'LOADED' });
+
+        expect(store).to.eventually.have
+            .dispatched('TRIGGER')
+            .and.dispatched('LOADED')
+            .and.dispatched('LOADED')
+            .and.dispatched('LOADING_ERROR')
+            .notify(done);
+    });
+
+    it('weird chains', (done) => {
+        let store = chai.createReduxStore({ reducer });
+        _delay(store.dispatch, 50, { type: 'LOADING_ERROR' });
+        _delay(store.dispatch, 10, { type: 'LOADED', firstName: 'Maria', lastName: 'Mustermann' });
+        store.dispatch({ type: 'TRIGGER' });
+        store.dispatch({ type: 'LOADED', firstName: 'Max', lastName: 'Mustermann' });
+
+        expect(store).to.eventually.have
+            .dispatched('TRIGGER')
+            .then.dispatched({ type: 'LOADED', firstName: 'Max', lastName: 'Mustermann' })
+            .then.dispatched({ type: 'LOADED', firstName: 'Maria', lastName: 'Mustermann' })
+            .then.dispatched('LOADING_ERROR')
+            .notify(done);
+    });
+
     it('should wait for all chained states', (done) => {
         let store = chai.createReduxStore({ reducer });
 
@@ -22,6 +52,7 @@ describe('then', () => {
         store.dispatch({ type: 'LOADED', firstName: 'Jane', lastName: 'Doe' });
         store.dispatch({ type: 'LOADED', firstName: 'Max', lastName: 'Mustermann' });
         _delay(store.dispatch, 50, { type: 'LOADING_ERROR' });
+
     });
 
     it('should have all chained states', () => {

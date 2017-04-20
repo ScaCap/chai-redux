@@ -118,17 +118,29 @@ exports.default = function (chai, utils) {
 
         var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
+        // declare and initiate
         var _defaults2 = (0, _lodash6.default)(options, defaultOptions),
             compareState = _defaults2.compareState,
             values = _defaults2.values;
 
         var isAsync = utils.flag(this, 'eventually') || false;
         var isChained = utils.flag(this, 'then') || false;
-        var lastIndex = utils.flag(this, 'lastIndex');
-        utils.flag(this, 'then', false);
+        var lastIndex = function lastIndex() {
+            return utils.flag(_this, 'lastIndex');
+        };
+        var chainIndex = utils.flag(this, 'chainIndex') || 0;
+
+        var updateAssertions = function updateAssertions(value) {
+            var assertions = utils.flag(_this, 'assertions') || [];
+            assertions[chainIndex] = value;
+            utils.flag(_this, 'assertions', assertions);
+        };
+
+        // assert current value
         var hasValue = function hasValue() {
             if (isChained) {
-                return values().length > lastIndex + 1 && compareState(values()[lastIndex + 1], expectedState);
+                var nextIndex = lastIndex() + 1;
+                return values().length > nextIndex && compareState(values()[nextIndex], expectedState);
             } else {
                 return !!values().find(function (state) {
                     return compareState(state, expectedState);
@@ -143,19 +155,29 @@ exports.default = function (chai, utils) {
             utils.flag(_this, 'lastIndex', index);
         };
 
-        if (isAsync === true && !hasValue()) {
+        // assertion is false by default
+        updateAssertions(false);
+        // update chain count
+        utils.flag(this, 'chainIndex', chainIndex + 1);
+        // reset then flag. Only then can set it to true
+        utils.flag(this, 'then', false);
+
+        if (isAsync === true) {
             var checkForValue = function checkForValue() {
                 if (hasValue()) {
+                    updateAssertions(true);
                     updateLastIndex();
-                    utils.flag(_this, 'notify.done', true);
                 } else {
                     setTimeout(checkForValue, 1);
                 }
             };
             checkForValue();
         } else {
-            this.assert(hasValue(), options.messages.positive, options.messages.negated, JSON.stringify(expectedState), JSON.stringify(values()));
-            utils.flag(this, 'notify.done', true);
+            updateAssertions(hasValue());
+            var assertions = utils.flag(this, 'assertions') || [];
+            this.assert(assertions.filter(function (assertion) {
+                return assertion;
+            }).length === assertions.length, options.messages.positive, options.messages.negated, JSON.stringify(expectedState), JSON.stringify(values()));
             updateLastIndex();
         }
     };
@@ -319,7 +341,10 @@ exports.default = function (chai, utils) {
         var notify = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : function () {};
 
         var isDone = function isDone() {
-            if (utils.flag(_this5, 'notify.done')) {
+            var assertions = utils.flag(_this5, 'assertions') || [];
+            if (assertions.filter(function (assertion) {
+                return assertion;
+            }).length === assertions.length) {
                 notify();
             } else {
                 setTimeout(isDone, 1);
