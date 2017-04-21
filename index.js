@@ -38,6 +38,17 @@ var isString = function isString(value) {
 exports.default = function (chai, utils) {
     var Assertion = chai.Assertion;
 
+    /**
+     * ### chai.createReduxStore
+     *
+     * Creates a redux store.
+     *
+     * @param reducer (Function, Object):Function: A reducing function Object: An object whose values correspond to
+     * different reducing functions.
+     * @param middleware ([Function]) : Optional functions that conform to the Redux middleware API.
+     * @param initialState (Object): initial state of store
+     * @returns {Store<S>|*} extended redux store to be used with chai expect.
+     */
 
     chai.createReduxStore = function (_ref) {
         var reducer = _ref.reducer,
@@ -49,7 +60,13 @@ exports.default = function (chai, utils) {
             return function (next) {
                 return function (action) {
                     reduxStore.__actions.push(action);
-                    var result = next(action);
+                    var result = void 0;
+                    try {
+                        result = next(action);
+                    } catch (e) {
+                        console.error('Error when calling middleware. ' + 'Did you forget to setup a middleware?');
+                        throw e;
+                    }
                     var state = reduxStore.getState();
                     reduxStore.__states.push(state);
                     reduxStore.__history.push({ action: action, state: state });
@@ -146,20 +163,20 @@ exports.default = function (chai, utils) {
     /**
      * ### .eventually
      *
-     * Sets the `eventually` flag
-     * later used by the `states`, `state` and `like` assertion.
+     * Sets the `eventually` flag.
+     * later used by the `dispatched`, `state` or `like` assertion.
      *
      *     expect(store).to.eventually.have.state({loaded: true});
-     *     expect(store).to.eventually.have.state.like({loaded: true});
+     *     expect(store).to.eventually.have.dispatched('FETCH');
      *
      */
     Assertion.addProperty('eventually', checkIfIsStoreProxyAndAddFlag('eventually'));
 
     /**
-     * ### .eventually
+     * ### .then
      *
-     * Sets the `eventually` flag
-     * later used by the `states`, `state` and `like` assertion.
+     * Sets the `then` flag.
+     * later used by the `dispatched`, `state` or `like` assertion.
      *
      *     expect(store).to.eventually.have.state({loaded: true});
      *     expect(store).to.eventually.have.state.like({loaded: true});
@@ -175,14 +192,20 @@ exports.default = function (chai, utils) {
     /**
      * ### .state(state)
      *
-     * Asserts that store state history contains `state`. Will use deep equal to compare objects
+     * Asserts that store's state history contains `state`. Will use deep equal to compare objects.
+     *
+     *     expect(store).to.have.state({b: 'a'});
+     *     expect(store).not.to.have.state({a: 'b'});
+     *     expect(store).to.have.state({b: 'a'}).and.state({b: 'b'});
      *
      * When used in conjunction with `eventually` it will wait till store state history
      * contains `state` or timeout.
      *
-     *     expect(store).to.have.state({b: 'a'});
-     *     expect(store).not.to.have.state({a: 'b'});
      *     expect(store).to.eventually.have.state({loaded: true});
+     *
+     * When chained with `then` it will assert store's state history contains `state`s in order.
+     *
+     *     expect(store).to.have.state({b: 'a'}).then.state({b: 'b'});
      *
      * @param {...String|Array|Object} state
      *
@@ -196,16 +219,23 @@ exports.default = function (chai, utils) {
     }, checkIfIsStoreProxyAndAddFlag('state'));
 
     /**
-     * ### .like(state)
+     * ### .state.like(state)
      *
-     * Asserts that store state history contains all `states` or `state`. Will performs a partial deep
+     * Asserts that store state history contains a `state`. It will perform a partial deep
      * comparison. returning true if `state` has equivalent property values.
      *
-     * When used in conjunction with `eventually` it will wait until store state history
-     * contains `state` / all `states`. Otherwise will timeout
-     *
      *     expect(store).to.have.state.like({b: 'a'});
-     *     expect(store).to.eventually.have.states.like([{loaded: false}, {loaded: true, loading: false}]);
+     *     expect(store).not.to.have.state.like({a: 'b'});
+     *     expect(store).to.have.state({b: 'a'}).and.state.like({b: 'b'});
+     *
+     * When used in conjunction with `eventually` it will wait till store state history
+     * contains `state` or timeout.
+     *
+     *     expect(store).to.eventually.have.state.like({loaded: true});
+     *
+     * When chained with `then` it will assert store's state history contains `state`s in order.
+     *
+     *     expect(store).to.have.state.like({b: 'a'}).then.state({b: 'b'});
      *
      * @param {...Array|Object|String} states
      *
@@ -230,6 +260,34 @@ exports.default = function (chai, utils) {
         }
     });
 
+    /**
+     * ### .dispatched(action)
+     *
+     * Asserts that store's action history contains `action`.
+     *
+     * When passed an object it will perform a partial deep comparison. returning true if `action` has equivalent
+     * property values.
+     *
+     *     expect(store).to.have.dispatched({type: 'FETCH'});
+     *     expect(store).not.to.have.dispatched({type: 'FETCH'});
+     *     expect(store).to.have.dispatched({type: 'FETCH'}).and.dispatched({type: 'SUCCESSFUL'});
+     *
+     * When passed a string it will compare it to `action.type`.
+     *
+     *     expect(store).to.have.dispatched('FETCH');
+     *
+     * When used in conjunction with `eventually` it will wait till store's action history
+     * contains `action` or timeout.
+     *
+     *     expect(store).to.eventually.have.dispatched('FETCH');
+     *
+     * When chained with `then` it will assert store's state history contains `state`s in order.
+     *
+     *     expect(store).to.have.dispatched('FETCH').then.dispatched({type: 'SUCCESSFUL'});
+     *
+     * @param {...Array|Object|String} states
+     *
+     */
     Assertion.addMethod('dispatched', function dispatched(expectedAction) {
         var _this4 = this;
 
@@ -249,8 +307,8 @@ exports.default = function (chai, utils) {
     /**
      * ### .notify
      *
-     * Will trigger callback once `state`, `states` or `like` have passed.
-     * Can be used to notify testing framework that test is completed
+     * Will trigger callback once `state`, `dispatched` or `like` assertion has passed.
+     * Can be used to notify testing framework that test is completed.
      *
      *     expect(store).to.eventually.have.state({loaded: true}).notify(done);
      *
