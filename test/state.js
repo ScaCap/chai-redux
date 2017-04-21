@@ -9,6 +9,12 @@ describe('states', () => {
 
     it('should wait for all states', (done) => {
         let store = chai.createReduxStore({ reducer });
+
+        store.dispatch({ type: 'TRIGGER' });
+        store.dispatch({ type: 'LOADED', firstName: 'Jane', lastName: 'Doe' });
+        store.dispatch({ type: 'LOADED', firstName: 'Max', lastName: 'Mustermann' });
+        _delay(store.dispatch, 50, { type: 'LOADING_ERROR' });
+
         expect(store).to.eventually.have
             .state({ value: null, loading: false, loaded: false })
             .and.state({ value: null, loading: true, loaded: false })
@@ -16,10 +22,6 @@ describe('states', () => {
             .and.state({ value: { firstName: 'Max', lastName: 'Mustermann' }, loading: false, loaded: true })
             .and.state({ value: null, loading: false, loaded: false })
             .notify(done);
-        store.dispatch({ type: 'TRIGGER' });
-        store.dispatch({ type: 'LOADED', firstName: 'Jane', lastName: 'Doe' });
-        store.dispatch({ type: 'LOADED', firstName: 'Max', lastName: 'Mustermann' });
-        _delay(store.dispatch, 50, { type: 'LOADING_ERROR' });
     });
 
     it('should have all states', () => {

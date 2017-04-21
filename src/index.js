@@ -28,6 +28,14 @@ export default (chai, utils) => {
      */
     chai.createReduxStore = ({ reducer, middleware, initialState }) => {
         let reduxStore;
+        /**
+         * middleware
+         * --------------
+         * When action is dispatched it will
+         * - store action
+         * - store nextState
+         * - notify all (internal) listeners
+         */
         const history = store => next => action => {
             reduxStore.__actions.push(action);
             let result;
@@ -41,6 +49,7 @@ export default (chai, utils) => {
             let state = reduxStore.getState();
             reduxStore.__states.push(state);
             reduxStore.__history.push({ action, state: state });
+            reduxStore.__listener.forEach(listener => {listener()});
             return result;
         };
 
@@ -61,7 +70,16 @@ export default (chai, utils) => {
             __isProxyStore: true,
             __actions: [action],
             __states: [state],
-            __history: [{ state, action }]
+            __history: [{ state, action }],
+            __listener: [],
+            // will notify listener when an action is dispatched
+            __subscribe: function (listener) {
+                this.__listener.push(listener);
+                return () => {
+                    this.__listener = this.__listener.filter(l => l !== listener);
+                };
+            }
+
         });
         return reduxStore;
     };
@@ -83,15 +101,25 @@ export default (chai, utils) => {
     };
 
     let verifyValues = function (expectedState, options = {}) {
+        // declare and initiate
         let { compareState, values } = _defaults(options, defaultOptions);
         const isAsync = utils.flag(this, 'eventually') || false;
         const isChained = utils.flag(this, 'then') || false;
-        const lastIndex = utils.flag(this, 'lastIndex');
-        utils.flag(this, 'then', false);
+        const lastIndex = () => utils.flag(this, 'lastIndex');
+        const chainIndex = utils.flag(this, 'chainIndex') || 0;
+
+        const updateAssertions = (value) => {
+            const assertions = utils.flag(this, 'assertions') || [];
+            assertions[chainIndex] = value;
+            utils.flag(this, 'assertions', assertions);
+        };
+
+        // assert current value
         const hasValue = () => {
             if (isChained) {
-                return values().length > lastIndex + 1
-                    && compareState(values()[lastIndex + 1], expectedState)
+                let nextIndex = lastIndex() + 1;
+                return values().length > nextIndex
+                    && compareState(values()[nextIndex], expectedState)
             } else {
                 return !!values().find((state) => compareState(state, expectedState));
             }
@@ -102,25 +130,34 @@ export default (chai, utils) => {
             utils.flag(this, 'lastIndex', index);
         };
 
-        if (isAsync === true && !hasValue()) {
+        // assertion is false by default
+        updateAssertions(false);
+        // update chain count
+        utils.flag(this, 'chainIndex', chainIndex + 1);
+        // reset then flag. Only then can set it to true
+        utils.flag(this, 'then', false);
+
+        if (isAsync === true) {
+            let unsubscribe;
             const checkForValue = () => {
                 if (hasValue()) {
+                    updateAssertions(true);
                     updateLastIndex();
-                    utils.flag(this, 'notify.done', true);
-                } else {
-                    setTimeout(checkForValue, 1);
+                    unsubscribe();
                 }
             };
+            unsubscribe = this._obj.__subscribe(checkForValue);
             checkForValue();
         } else {
+            updateAssertions(hasValue());
+            const assertions = utils.flag(this, 'assertions') || [];
             this.assert(
-                hasValue(),
+                assertions.filter(assertion => assertion).length === assertions.length,
                 options.messages.positive,
                 options.messages.negated,
                 JSON.stringify(expectedState),
                 JSON.stringify(values())
             );
-            utils.flag(this, 'notify.done', true);
             updateLastIndex();
         }
 
@@ -268,13 +305,15 @@ export default (chai, utils) => {
      *
      */
     Assertion.addMethod('notify', function (notify = () => {}) {
+        let unsubscribe;
         const isDone = () => {
-            if (utils.flag(this, 'notify.done')) {
+            const assertions = utils.flag(this, 'assertions') || [];
+            if (assertions.filter(assertion => assertion).length === assertions.length) {
+                unsubscribe();
                 notify();
-            } else {
-                setTimeout(isDone, 1);
             }
         };
+        unsubscribe = this._obj.__subscribe(isDone);
         isDone();
     });
 };

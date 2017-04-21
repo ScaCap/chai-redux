@@ -34,7 +34,7 @@ describe('dispatched', () => {
         store.dispatch({ type: 'TEST-1' });
         _delay(store.dispatch, 50, ({ type: 'TEST' }));
         expect(store).to.have.eventually
-            .dispatched([{ type: 'TEST-1' }])
+            .dispatched({ type: 'TEST-1' })
             .and.dispatched({ type: 'TEST' })
             .notify(done);
     });
