@@ -48,8 +48,8 @@ chai.use(chaiRedux)
 
 #### Arguments:
 
-1. reducer (Function, Object): 
- 1.1 Function: A reducing function that returns the next state tree, given the current state tree and an action to handle
+1. reducer (Function, Object):  
+ 1.1 Function: A reducing function that returns the next state tree, given the current state tree and an action to handle.   
  1.2 Object: An object whose values correspond to different reducing functions that need to be combined into one.
 2. middlewares ([Function]) : Optional functions that conform to the Redux middleware API.
 3. initialState (Object): initial state of store
