@@ -141,7 +141,12 @@ export default (chai, utils) => {
         };
 
         const updateLastIndex = () => {
-            const index = values().findIndex((state) => compareState(state, expectedState));
+            let index;
+            if (isChained) {
+                index = lastIndex() + 1;
+            } else {
+                index = values().findIndex(state => compareState(state, expectedState));
+            }
             utils.flag(this, 'lastIndex', index);
         };
 
