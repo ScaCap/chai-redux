@@ -12,7 +12,10 @@
     "redux"
   ],
   "author": "engineering@scalable.capital",
-  "license": "ISC",
+  "license": {
+    "type": "Apache 2.0",
+    "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+  },
   "devDependencies": {
     "babel-cli": "^6.24.0",
     "babel-plugin-transform-object-rest-spread": "^6.23.0",
