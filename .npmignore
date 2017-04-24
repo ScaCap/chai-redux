@@ -1,7 +1,6 @@
 # only deliver es5 code from build
 src/
 test/
-examples/
 
 .babelrc
 .eslintignore
