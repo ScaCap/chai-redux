@@ -23,8 +23,8 @@ For more insights read [Why I created chai-redux](https://medium.com/p/9704563fe
 
 Required peer dependencies:
 
-- chai >=1.1.0
-- redux >=3.1.3
+- chai >= 1.1.0
+- redux >= 3.1.3
 
 ```
 $ npm run install chai-redux
