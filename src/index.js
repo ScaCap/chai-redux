@@ -15,7 +15,6 @@
  */
 import _isEqual from 'lodash.isequal';
 import _pick from 'lodash.pick';
-import _defaults from 'lodash.defaults';
 import { createStore, combineReducers, applyMiddleware } from 'redux';
 
 const partialEquals = (obj, exptected) => {
@@ -117,7 +116,7 @@ export default (chai, utils) => {
 
     let verifyValues = function (expectedState, options = {}) {
         // declare and initiate
-        let { compareState, values } = _defaults(options, defaultOptions);
+        let { compareState, values } = {...defaultOptions, ...options};
         const isAsync = utils.flag(this, 'eventually') || false;
         const isChained = utils.flag(this, 'then') || false;
         const lastIndex = () => utils.flag(this, 'lastIndex');
