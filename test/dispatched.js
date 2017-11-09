@@ -21,29 +21,29 @@ describe('dispatched', () => {
         expect(store).to.have.dispatched({ type: 'TEST' });
     });
 
-    it('should eventually have action TEST', (done) => {
+    it('should finally have action TEST', (done) => {
         const store = chai.createReduxStore({ reducer });
         _delay(store.dispatch, 50, ({ type: 'TEST' }));
-        expect(store).to.have.eventually
+        expect(store).to.have.finally
             .dispatched('TEST')
             .notify(done);
     });
 
-    it('should eventually have actions TEST-1 and TEST', (done) => {
+    it('should finally have actions TEST-1 and TEST', (done) => {
         const store = chai.createReduxStore({ reducer });
         store.dispatch({ type: 'TEST-1' });
         _delay(store.dispatch, 50, ({ type: 'TEST' }));
-        expect(store).to.have.eventually
+        expect(store).to.have.finally
             .dispatched({ type: 'TEST-1' })
             .and.dispatched({ type: 'TEST' })
             .notify(done);
     });
 
-    it('should eventually have actions TEST-1, TEST', (done) => {
+    it('should finally have actions TEST-1, TEST', (done) => {
         const store = chai.createReduxStore({ reducer });
         store.dispatch({ type: 'TEST-1' });
         _delay(store.dispatch, 50, ({ type: 'TEST' }));
-        expect(store).to.have.eventually
+        expect(store).to.have.finally
             .dispatched('TEST-1')
             .and.dispatched('TEST')
             .notify(done);

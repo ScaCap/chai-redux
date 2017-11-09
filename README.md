@@ -9,9 +9,9 @@ const store = chai.createReduxStore({reducer, middleware: [thunk]});
 // when
 store.dispatch(fetchData());
 // then
-expect(store).to.eventually.have
+expect(store).to.finally.have
     .dispatched('FETCH')
-    .then.dispatched(
+    .next.dispatched(
         {type: 'SUCCESSFUL', name: 'redux'})
     .notify(done);
 ```
@@ -107,17 +107,17 @@ expect(store).to.have
     .and.state.like({value: 42});
 ``` 
 
-**.then.state(state: any)**
+**.next.state(state: any)**
 
 Asserts that *state* is next state in state history.
 
 ```
 expect(store).to.have
     .state({loading: false})
-    .then.state({loading: true});
+    .next.state({loading: true});
 ``` 
 
-then.state and then.dispatched cannot be mixed.
+next.state and next.dispatched cannot be mixed.
 
 **.dispatched(action: String, Object)**
 
@@ -130,26 +130,26 @@ expect(store).to.have
     .dispatched('LOAD');
 ``` 
 
-**.then.dispatched(state: any)**
+**.next.dispatched(state: any)**
 
 Asserts that *state* is next state in state history.
 
 ```
 expect(store).to.have
     .dispatched('LOAD')
-    .then.dispatched({type: 'RESET'});
+    .next.dispatched({type: 'RESET'});
 ``` 
 
-then.state and then.dispatched cannot be mixed.
+next.state and next.dispatched cannot be mixed.
 
-**.eventually**, **.notify(done: function)**
+**.finally**, **.notify(done: function)**
 
 Asserts that history contains *state* or *action*. 
 It will wait till store history contains *state* or *action*. 
 Once state is found *done* is notified.
 
 ```
-expect(store).to.have.eventually
+expect(store).to.have.finally
     .state({loading: false, value: null})
     .and.state.like({loading: true})
     .and.dispatched('LOAD')
