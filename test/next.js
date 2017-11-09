@@ -5,7 +5,7 @@ import _delay from 'lodash.delay';
 
 chai.use(chaiRedux);
 
-describe('then', () => {
+describe('next', () => {
 
     it('weird chains - dispatched', (done) => {
         let store = chai.createReduxStore({ reducer });
@@ -14,7 +14,7 @@ describe('then', () => {
         _delay(store.dispatch, 50, { type: 'TRIGGER' });
         _delay(store.dispatch, 10, { type: 'LOADED' });
 
-        expect(store).to.eventually.have
+        expect(store).to.finally.have
             .dispatched('TRIGGER')
             .and.dispatched('LOADED')
             .and.dispatched('LOADED')
@@ -29,11 +29,11 @@ describe('then', () => {
         store.dispatch({ type: 'TRIGGER' });
         store.dispatch({ type: 'LOADED', firstName: 'Max', lastName: 'Mustermann' });
 
-        expect(store).to.eventually.have
+        expect(store).to.finally.have
             .dispatched('TRIGGER')
-            .then.dispatched({ type: 'LOADED', firstName: 'Max', lastName: 'Mustermann' })
-            .then.dispatched({ type: 'LOADED', firstName: 'Maria', lastName: 'Mustermann' })
-            .then.dispatched('LOADING_ERROR')
+            .next.dispatched({ type: 'LOADED', firstName: 'Max', lastName: 'Mustermann' })
+            .next.dispatched({ type: 'LOADED', firstName: 'Maria', lastName: 'Mustermann' })
+            .next.dispatched('LOADING_ERROR')
             .notify(done);
     });
 
@@ -44,23 +44,23 @@ describe('then', () => {
         store.dispatch({ type: 'TRIGGER' });
         store.dispatch({ type: 'LOADED', firstName: 'Max', lastName: 'Mustermann' });
 
-        expect(store).to.eventually.have
+        expect(store).to.finally.have
             .dispatched('TRIGGER')
-            .then.dispatched('LOADED')
-            .then.dispatched('LOADED')
-            .then.dispatched('LOADING_ERROR')
+            .next.dispatched('LOADED')
+            .next.dispatched('LOADED')
+            .next.dispatched('LOADING_ERROR')
             .notify(done);
     });
 
     it('should wait for all chained states', (done) => {
         let store = chai.createReduxStore({ reducer });
 
-        expect(store).to.eventually.have
+        expect(store).to.finally.have
             .state({ value: null, loading: false, loaded: false })
-            .then.state({ value: null, loading: true, loaded: false })
-            .then.state({ value: { firstName: 'Jane', lastName: 'Doe' }, loading: false, loaded: true })
-            .then.state({ value: { firstName: 'Max', lastName: 'Mustermann' }, loading: false, loaded: true })
-            .then.state({ value: null, loading: false, loaded: false })
+            .next.state({ value: null, loading: true, loaded: false })
+            .next.state({ value: { firstName: 'Jane', lastName: 'Doe' }, loading: false, loaded: true })
+            .next.state({ value: { firstName: 'Max', lastName: 'Mustermann' }, loading: false, loaded: true })
+            .next.state({ value: null, loading: false, loaded: false })
             .notify(done);
 
         store.dispatch({ type: 'TRIGGER' });
@@ -79,16 +79,16 @@ describe('then', () => {
 
         expect(store).to.have
             .state({ value: null, loading: false, loaded: false })
-            .then.have.state({ value: null, loading: true, loaded: false })
-            .then.have.state({ value: { firstName: 'Jane', lastName: 'Doe' }, loading: false, loaded: true })
-            .then.have.state({ value: { firstName: 'Max', lastName: 'Mustermann' }, loading: false, loaded: true })
-            .then.have.state({ value: null, loading: false, loaded: false });
+            .next.have.state({ value: null, loading: true, loaded: false })
+            .next.have.state({ value: { firstName: 'Jane', lastName: 'Doe' }, loading: false, loaded: true })
+            .next.have.state({ value: { firstName: 'Max', lastName: 'Mustermann' }, loading: false, loaded: true })
+            .next.have.state({ value: null, loading: false, loaded: false });
     });
 
-    it('should not fail if then is used as first state check', () => {
+    it('should not fail if next is used as first state check', () => {
         let store = chai.createReduxStore({ reducer: reducer });
         expect(store).to.have
-            .then.state({ value: null, loading: false, loaded: false });
+            .next.state({ value: null, loading: false, loaded: false });
     });
 
     it('should only work in correct order', () => {
@@ -108,9 +108,9 @@ describe('then', () => {
 
         const wrongChain = () => expect(store).to.have
             .dispatched({ type: 'TRIGGER' })
-            .then.dispatched({ type: 'LOADED', firstName: 'Max', lastName: 'Mustermann' })
-            .then.dispatched({ type: 'LOADED', firstName: 'Jane', lastName: 'Doe' })
-            .then.dispatched({ type: 'LOADING_ERROR' });
+            .next.dispatched({ type: 'LOADED', firstName: 'Max', lastName: 'Mustermann' })
+            .next.dispatched({ type: 'LOADED', firstName: 'Jane', lastName: 'Doe' })
+            .next.dispatched({ type: 'LOADING_ERROR' });
 
         expect(wrongChain).to.throw(/expected/)
     });

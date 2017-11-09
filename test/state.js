@@ -15,7 +15,7 @@ describe('states', () => {
         store.dispatch({ type: 'LOADED', firstName: 'Max', lastName: 'Mustermann' });
         _delay(store.dispatch, 50, { type: 'LOADING_ERROR' });
 
-        expect(store).to.eventually.have
+        expect(store).to.finally.have
             .state({ value: null, loading: false, loaded: false })
             .and.state({ value: null, loading: true, loaded: false })
             .and.state({ value: { firstName: 'Jane', lastName: 'Doe' }, loading: false, loaded: true })

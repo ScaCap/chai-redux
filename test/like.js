@@ -9,7 +9,7 @@ describe('like', () => {
 
     it('should wait for all states (partial deep comparison)', (done) => {
         let store = chai.createReduxStore({ reducer });
-        expect(store).to.eventually.have
+        expect(store).to.finally.have
             .state.like({ value: { firstName: 'Jane', lastName: 'Doe' } })
             .and.state.like({ value: { firstName: 'Max', lastName: 'Mustermann' } })
             .notify(done);

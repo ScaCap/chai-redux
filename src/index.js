@@ -19,9 +19,9 @@ import _defaults from 'lodash.defaults';
 import { createStore, combineReducers, applyMiddleware } from 'redux';
 
 const partialEquals = (obj, exptected) => {
-  let allExpectedKeys = Object.keys(exptected);
-  let partialObject = _pick(obj, allExpectedKeys);
-  return _isEqual(partialObject, exptected);
+    let allExpectedKeys = Object.keys(exptected);
+    let partialObject = _pick(obj, allExpectedKeys);
+    return _isEqual(partialObject, exptected);
 };
 
 const isFunction = (value) => typeof value === 'function';
@@ -56,7 +56,7 @@ export default (chai, utils) => {
             let result;
             try {
                 result = next(action);
-            }catch (e) {
+            } catch (e) {
                 console.error('Error when calling middleware. ' +
                     'Did you forget to setup a middleware?');
                 throw e;
@@ -64,7 +64,7 @@ export default (chai, utils) => {
             let state = reduxStore.getState();
             reduxStore.__states.push(state);
             reduxStore.__history.push({ action, state: state });
-            reduxStore.__listener.forEach(listener => {listener()});
+            reduxStore.__listener.forEach(listener => { listener() });
             return result;
         };
 
@@ -118,8 +118,8 @@ export default (chai, utils) => {
     let verifyValues = function (expectedState, options = {}) {
         // declare and initiate
         let { compareState, values } = _defaults(options, defaultOptions);
-        const isAsync = utils.flag(this, 'eventually') || false;
-        const isChained = utils.flag(this, 'then') || false;
+        const isAsync = utils.flag(this, 'finally') || false;
+        const isChained = utils.flag(this, 'next') || false;
         const lastIndex = () => utils.flag(this, 'lastIndex');
         const chainIndex = utils.flag(this, 'chainIndex') || 0;
 
@@ -154,8 +154,8 @@ export default (chai, utils) => {
         updateAssertions(false);
         // update chain count
         utils.flag(this, 'chainIndex', chainIndex + 1);
-        // reset then flag. Only then can set it to true
-        utils.flag(this, 'then', false);
+        // reset next flag. Only then can set it to true
+        utils.flag(this, 'next', false);
 
         if (isAsync === true) {
             let unsubscribe;
@@ -184,30 +184,30 @@ export default (chai, utils) => {
     };
 
     /**
-     * ### .eventually
+     * ### .finally
      *
-     * Sets the `eventually` flag.
+     * Sets the `finally` flag.
      * later used by the `dispatched`, `state` or `like` assertion.
      *
-     *     expect(store).to.eventually.have.state({loaded: true});
-     *     expect(store).to.eventually.have.dispatched('FETCH');
+     *     expect(store).to.finally.have.state({loaded: true});
+     *     expect(store).to.finally.have.dispatched('FETCH');
      *
      */
-    Assertion.addProperty('eventually', checkIfIsStoreProxyAndAddFlag('eventually'));
+    Assertion.addProperty('finally', checkIfIsStoreProxyAndAddFlag('finally'));
 
     /**
-     * ### .then
+     * ### .next
      *
-     * Sets the `then` flag.
+     * Sets the `next` flag.
      * later used by the `dispatched`, `state` or `like` assertion.
      *
-     *     expect(store).to.eventually.have.state({loaded: true});
-     *     expect(store).to.eventually.have.state.like({loaded: true});
+     *     expect(store).to.finally.have.state({loaded: true});
+     *     expect(store).to.finally.have.state.like({loaded: true});
      *
      */
-    Assertion.addProperty('then', function(){
-        checkIfIsStoreProxyAndAddFlag('then').call(this, 'then');
-        if(utils.flag(this, 'lastIndex') === undefined){
+    Assertion.addProperty('next', function () {
+        checkIfIsStoreProxyAndAddFlag('next').call(this, 'next');
+        if (utils.flag(this, 'lastIndex') === undefined) {
             utils.flag(this, 'lastIndex', -1);
         }
     });
@@ -221,14 +221,14 @@ export default (chai, utils) => {
      *     expect(store).not.to.have.state({a: 'b'});
      *     expect(store).to.have.state({b: 'a'}).and.state({b: 'b'});
      *
-     * When used in conjunction with `eventually` it will wait till store state history
+     * When used in conjunction with `finally` it will wait till store state history
      * contains `state` or timeout.
      *
-     *     expect(store).to.eventually.have.state({loaded: true});
+     *     expect(store).to.finally.have.state({loaded: true});
      *
-     * When chained with `then` it will assert store's state history contains `state`s in order.
+     * When chained with `next` it will assert store's state history contains `state`s in order.
      *
-     *     expect(store).to.have.state({b: 'a'}).then.state({b: 'b'});
+     *     expect(store).to.have.state({b: 'a'}).next.state({b: 'b'});
      *
      * @param {...String|Array|Object} state
      *
@@ -247,14 +247,14 @@ export default (chai, utils) => {
      *     expect(store).not.to.have.state.like({a: 'b'});
      *     expect(store).to.have.state({b: 'a'}).and.state.like({b: 'b'});
      *
-     * When used in conjunction with `eventually` it will wait till store state history
+     * When used in conjunction with `finally` it will wait till store state history
      * contains `state` or timeout.
      *
-     *     expect(store).to.eventually.have.state.like({loaded: true});
+     *     expect(store).to.finally.have.state.like({loaded: true});
      *
-     * When chained with `then` it will assert store's state history contains `state`s in order.
+     * When chained with `next` it will assert store's state history contains `state`s in order.
      *
-     *     expect(store).to.have.state.like({b: 'a'}).then.state({b: 'b'});
+     *     expect(store).to.have.state.like({b: 'a'}).next.state({b: 'b'});
      *
      * @param {...Array|Object|String} states
      *
@@ -291,14 +291,14 @@ export default (chai, utils) => {
      *
      *     expect(store).to.have.dispatched('FETCH');
      *
-     * When used in conjunction with `eventually` it will wait till store's action history
+     * When used in conjunction with `finally` it will wait till store's action history
      * contains `action` or timeout.
      *
-     *     expect(store).to.eventually.have.dispatched('FETCH');
+     *     expect(store).to.finally.have.dispatched('FETCH');
      *
-     * When chained with `then` it will assert store's state history contains `state`s in order.
+     * When chained with `next` it will assert store's state history contains `state`s in order.
      *
-     *     expect(store).to.have.dispatched('FETCH').then.dispatched({type: 'SUCCESSFUL'});
+     *     expect(store).to.have.dispatched('FETCH').next.dispatched({type: 'SUCCESSFUL'});
      *
      * @param {...Array|Object|String} states
      *
@@ -321,10 +321,10 @@ export default (chai, utils) => {
      * Will trigger callback once `state`, `dispatched` or `like` assertion has passed.
      * Can be used to notify testing framework that test is completed.
      *
-     *     expect(store).to.eventually.have.state({loaded: true}).notify(done);
+     *     expect(store).to.finally.have.state({loaded: true}).notify(done);
      *
      */
-    Assertion.addMethod('notify', function (notify = () => {}) {
+    Assertion.addMethod('notify', function (notify = () => { }) {
         let unsubscribe;
         const isDone = () => {
             const assertions = utils.flag(this, 'assertions') || [];
