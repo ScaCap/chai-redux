@@ -116,7 +116,7 @@ export default (chai, utils) => {
 
     let verifyValues = function (expectedState, options = {}) {
         // declare and initiate
-        let { compareState, values, messages } = {...defaultOptions, ...options};
+        let { compareState, values } = {...defaultOptions, ...options};
         const isAsync = utils.flag(this, 'eventually') || false;
         const isChained = utils.flag(this, 'then') || false;
         const lastIndex = () => utils.flag(this, 'lastIndex');
@@ -172,8 +172,8 @@ export default (chai, utils) => {
             const assertions = utils.flag(this, 'assertions') || [];
             this.assert(
                 assertions.filter(assertion => assertion).length === assertions.length,
-                messages.positive,
-                messages.negated,
+                options.messages.positive,
+                options.messages.negated,
                 JSON.stringify(expectedState),
                 JSON.stringify(values())
             );
