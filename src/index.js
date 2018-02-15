@@ -15,19 +15,19 @@
  */
 import _isEqual from 'deep-equal';
 import _pick from 'lodash.pick';
-import { createStore, combineReducers, applyMiddleware } from 'redux';
+import {createStore, combineReducers, applyMiddleware} from 'redux';
 
 const partialEquals = (obj, exptected) => {
-  let allExpectedKeys = Object.keys(exptected);
-  let partialObject = _pick(obj, allExpectedKeys);
-  return _isEqual(partialObject, exptected);
+    let allExpectedKeys = Object.keys(exptected);
+    let partialObject = _pick(obj, allExpectedKeys);
+    return _isEqual(partialObject, exptected);
 };
 
 const isFunction = (value) => typeof value === 'function';
 const isString = (value) => typeof value === 'string';
 
 export default (chai, utils) => {
-    let { Assertion } = chai;
+    let {Assertion} = chai;
 
     /**
      * ### chai.createReduxStore
@@ -40,7 +40,7 @@ export default (chai, utils) => {
      * @param initialState (Object): initial state of store
      * @returns {Store<S>|*} extended redux store to be used with chai expect.
      */
-    chai.createReduxStore = ({ reducer, middleware, initialState }) => {
+    chai.createReduxStore = ({reducer, middleware, initialState}) => {
         let reduxStore;
         /**
          * middleware
@@ -55,15 +55,17 @@ export default (chai, utils) => {
             let result;
             try {
                 result = next(action);
-            }catch (e) {
+            } catch (e) {
                 console.error('Error when calling middleware. ' +
                     'Did you forget to setup a middleware?');
                 throw e;
             }
             let state = reduxStore.getState();
             reduxStore.__states.push(state);
-            reduxStore.__history.push({ action, state: state });
-            reduxStore.__listener.forEach(listener => {listener()});
+            reduxStore.__history.push({action, state: state});
+            reduxStore.__listener.forEach(listener => {
+                listener();
+            });
             return result;
         };
 
@@ -78,13 +80,13 @@ export default (chai, utils) => {
         middlewareAsArray.push(history);
 
         reduxStore = createStore(storeReducers, initialState, applyMiddleware(...middlewareAsArray));
-        let action = { type: '@@INIT' };
+        let action = {type: '@@INIT'};
         const state = reduxStore.getState();
         Object.assign(reduxStore, {
             __isProxyStore: true,
             __actions: [action],
             __states: [state],
-            __history: [{ state, action }],
+            __history: [{state, action}],
             __listener: [],
             // will notify listener when an action is dispatched
             __subscribe: function (listener) {
@@ -116,10 +118,10 @@ export default (chai, utils) => {
 
     let verifyValues = function (expectedState, options = {}) {
         // declare and initiate
-        let { compareState, values, messages } = {...defaultOptions, ...options};
+        let {compareState, values, messages} = {...defaultOptions, ...options};
         const isAsync = utils.flag(this, 'eventually') || false;
         const isChained = utils.flag(this, 'then') || false;
-        const lastIndex = () => utils.flag(this, 'lastIndex');
+        const lastIndices = () => utils.flag(this, 'lastIndices');
         const chainIndex = utils.flag(this, 'chainIndex') || 0;
 
         const updateAssertions = (value) => {
@@ -130,23 +132,40 @@ export default (chai, utils) => {
 
         // assert current value
         const hasValue = () => {
-            if (isChained) {
-                let nextIndex = lastIndex() + 1;
-                return values().length > nextIndex
-                    && compareState(values()[nextIndex], expectedState)
+            let isValid = false;
+            if (isChained && chainIndex) {
+                let previousIndices = lastIndices() || [];
+                isValid = !!previousIndices.map(lastIndex => {
+                    let nextIndex = lastIndex + 1;
+                    return values().length > nextIndex
+                        && compareState(values()[nextIndex], expectedState);
+                })
+                    .find(assertion => assertion === true);
             } else {
-                return !!values().find((state) => compareState(state, expectedState));
+                isValid = !!values().find((state) => compareState(state, expectedState));
             }
+            return isValid;
         };
 
-        const updateLastIndex = () => {
-            let index;
+        const updateLastIndices = () => {
+            let currentValues = values();
+            let indices = [];
+            let previousIndices = lastIndices() || [];
             if (isChained) {
-                index = lastIndex() + 1;
+                indices = previousIndices
+                    .filter(lastIndex => {
+                        let nextIndex = lastIndex + 1;
+                        return currentValues.length > nextIndex
+                            && compareState(currentValues[nextIndex], expectedState);
+                    })
+                    .map(index => index + 1);
             } else {
-                index = values().findIndex(state => compareState(state, expectedState));
+                indices = currentValues
+                    .map((state, index) => ({state, index}))
+                    .filter(({state}) => compareState(state, expectedState))
+                    .map(({index}) => index);
             }
-            utils.flag(this, 'lastIndex', index);
+            utils.flag(this, 'lastIndices', indices.map(ix => ix));
         };
 
         // assertion is false by default
@@ -157,15 +176,13 @@ export default (chai, utils) => {
         utils.flag(this, 'then', false);
 
         if (isAsync === true) {
-            let unsubscribe;
             const checkForValue = () => {
                 if (hasValue()) {
                     updateAssertions(true);
-                    updateLastIndex();
-                    unsubscribe();
+                    updateLastIndices();
                 }
             };
-            unsubscribe = this._obj.__subscribe(checkForValue);
+            this._obj.__subscribe(checkForValue);
             checkForValue();
         } else {
             updateAssertions(hasValue());
@@ -177,7 +194,7 @@ export default (chai, utils) => {
                 JSON.stringify(expectedState),
                 JSON.stringify(values())
             );
-            updateLastIndex();
+            updateLastIndices();
         }
 
     };
@@ -204,10 +221,10 @@ export default (chai, utils) => {
      *     expect(store).to.eventually.have.state.like({loaded: true});
      *
      */
-    Assertion.addProperty('then', function(){
+    Assertion.addProperty('then', function () {
         checkIfIsStoreProxyAndAddFlag('then').call(this, 'then');
-        if(utils.flag(this, 'lastIndex') === undefined){
-            utils.flag(this, 'lastIndex', -1);
+        if (utils.flag(this, 'lastIndices') === undefined) {
+            utils.flag(this, 'lastIndices', []);
         }
     });
 
@@ -233,7 +250,7 @@ export default (chai, utils) => {
      *
      */
     Assertion.addChainableMethod('state', function (expectedState) {
-        verifyValues.call(this, expectedState, { values: () => this._obj.__states });
+        verifyValues.call(this, expectedState, {values: () => this._obj.__states});
     }, checkIfIsStoreProxyAndAddFlag('state'));
 
     /**
@@ -303,7 +320,7 @@ export default (chai, utils) => {
      *
      */
     Assertion.addMethod('dispatched', function dispatched(expectedAction) {
-        let action = isString(expectedAction) ? { type: expectedAction } : expectedAction;
+        let action = isString(expectedAction) ? {type: expectedAction} : expectedAction;
         verifyValues.call(this, action, {
             compareState: partialEquals,
             values: () => this._obj.__actions,
