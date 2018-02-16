@@ -46,8 +46,7 @@
     "redux": ">=3.1.3"
   },
   "dependencies": {
-    "lodash.defaults": "^4.2.0",
-    "lodash.isequal": "^4.4.0",
+    "deep-equal": "^1.0.1",
     "lodash.pick": "^4.4.0"
   }
 }

@@ -52,6 +52,19 @@ describe('then', () => {
             .notify(done);
     });
 
+    it('should handle multiple indices', (done) => {
+        let store = chai.createReduxStore({ reducer });
+        _delay(store.dispatch, 50, { type: 'LOADING_ERROR' });
+        _delay(store.dispatch, 10, { type: 'LOADED', firstName: 'Maria', lastName: 'Mustermann' });
+        store.dispatch({ type: 'TRIGGER' });
+        store.dispatch({ type: 'LOADED', firstName: 'Max', lastName: 'Mustermann' });
+
+        expect(store).to.eventually.have
+            .dispatched('LOADED')
+            .then.dispatched('LOADING_ERROR')
+            .notify(done);
+    });
+
     it('should wait for all chained states', (done) => {
         let store = chai.createReduxStore({ reducer });
 
