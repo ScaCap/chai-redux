@@ -1,6 +1,6 @@
 {
   "name": "chai-redux",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Chai Helper for testing (async) redux stores",
   "main": "index.js",
   "scripts": {
