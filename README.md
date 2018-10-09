@@ -16,7 +16,6 @@ expect(store).to.eventually.have
     .notify(done);
 ```
 
-
 For more insights read [Why I created chai-redux](https://medium.com/p/9704563fedef)
 
 ## Install
@@ -27,7 +26,7 @@ Required peer dependencies:
 - redux >= 3.1.3
 
 ```
-$ npm run install chai-redux
+$ npm install --save-dev chai-redux
 ```
 
 ## Setup
@@ -37,7 +36,6 @@ import chai from 'chai'
 import chaiRedux from 'chai-redux'
 
 chai.use(chaiRedux)
-
 ```
 
 ## API
@@ -49,8 +47,8 @@ chai.use(chaiRedux)
 #### Arguments:
 
 1. reducer (Function, Object):  
- 1.1 Function: A reducing function that returns the next state tree, given the current state tree and an action to handle.   
- 1.2 Object: An object whose values correspond to different reducing functions that need to be combined into one.
+   1.1 Function: A reducing function that returns the next state tree, given the current state tree and an action to handle.  
+   1.2 Object: An object whose values correspond to different reducing functions that need to be combined into one.
 2. middlewares ([Function]) : Optional functions that conform to the Redux middleware API.
 3. initialState (Object): initial state of store
 
@@ -58,10 +56,11 @@ chai.use(chaiRedux)
 
 ```
 import chai, { expect } from 'chai';
-import chaiRedux from '../src';
 import thunk from 'redux-thunk';
-import reducerA from '//';
-import reducerB from '//';
+import chaiRedux from 'chai-redux';
+
+import reducerA from './reducerA';
+import reducerB from './reducerB';
 
 chai.use(chaiRedux);
 
@@ -79,14 +78,13 @@ describe('create test store', () => {
     });
 
 });
-
 ```
 
 ### Assertions
 
 **.state(state: any)**
 
-Asserts that store state history contains *state*, using deep equal. 
+Asserts that store state history contains _state_, using deep equal.
 
 ```
 expect(store).to.have.state({loading: false, value: null});
@@ -94,59 +92,59 @@ expect(store).not.to.have.state({loading: false, value: null});
 expect(store).to.have
     .state({loading: false, value: null})
     .and.state({loading: true, value: 42});
-``` 
+```
 
 **.state.like(state: any)**
 
-Asserts that store state history contains *state*, using partial deep comparison. 
+Asserts that store state history contains _state_, using partial deep comparison.
 
 ```
 expect(store).to.have.state.like({loading: false});
 expect(store).to.have
     .state.like({value: null})
     .and.state.like({value: 42});
-``` 
+```
 
 **.then.state(state: any)**
 
-Asserts that *state* is next state in state history.
+Asserts that _state_ is next state in state history.
 
 ```
 expect(store).to.have
     .state({loading: false})
     .then.state({loading: true});
-``` 
+```
 
 then.state and then.dispatched cannot be mixed.
 
 **.dispatched(action: String, Object)**
 
-Asserts that store action history contains *action*, using partial deep comparison.
+Asserts that store action history contains _action_, using partial deep comparison.
 
 ```
 expect(store).to.have
     .dispatched({type: 'LOAD'});
 expect(store).to.have
     .dispatched('LOAD');
-``` 
+```
 
 **.then.dispatched(state: any)**
 
-Asserts that *state* is next state in state history.
+Asserts that _state_ is next state in state history.
 
 ```
 expect(store).to.have
     .dispatched('LOAD')
     .then.dispatched({type: 'RESET'});
-``` 
+```
 
 then.state and then.dispatched cannot be mixed.
 
 **.eventually**, **.notify(done: function)**
 
-Asserts that history contains *state* or *action*. 
-It will wait till store history contains *state* or *action*. 
-Once state is found *done* is notified.
+Asserts that history contains _state_ or _action_.
+It will wait till store history contains _state_ or _action_.
+Once state is found _done_ is notified.
 
 ```
 expect(store).to.have.eventually
@@ -154,10 +152,10 @@ expect(store).to.have.eventually
     .and.state.like({loading: true})
     .and.dispatched('LOAD')
     .notify(done);
+
 // test
 store.dispatch({type: 'LOAD'});
 ```
-
 
 ## License
 
