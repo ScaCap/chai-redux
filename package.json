@@ -4,7 +4,7 @@
   "description": "Chai Helper for testing (async) redux stores",
   "main": "index.js",
   "scripts": {
-    "test": "mocha 'test/**/*' --compilers js:babel-register",
+    "test": "mocha 'test/**/*' --require @babel/register",
     "prepublish": "babel src/index.js --out-file index.js"
   },
   "keywords": [
@@ -27,9 +27,10 @@
     "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
   },
   "devDependencies": {
-    "babel-cli": "^6.24.0",
-    "babel-plugin-transform-object-rest-spread": "^6.23.0",
-    "babel-preset-env": "^1.2.2",
+    "@babel/cli": "^7.1.0",
+    "@babel/core": "^7.1.0",
+    "@babel/register": "^7.0.0",
+    "@babel/preset-env": "^7.1.0",
     "chai": "^3.0.0",
     "chai-spies": "^0.7.1",
     "fetch-mock": "^5.9.4",
