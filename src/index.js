@@ -15,7 +15,7 @@
  */
 import _isEqual from 'deep-equal';
 import _pick from 'lodash.pick';
-import {createStore, combineReducers, applyMiddleware} from 'redux';
+import { createStore, combineReducers, applyMiddleware } from 'redux';
 
 const partialEquals = (obj, exptected) => {
     let allExpectedKeys = Object.keys(exptected);
@@ -23,11 +23,11 @@ const partialEquals = (obj, exptected) => {
     return _isEqual(partialObject, exptected);
 };
 
-const isFunction = (value) => typeof value === 'function';
-const isString = (value) => typeof value === 'string';
+const isFunction = value => typeof value === 'function';
+const isString = value => typeof value === 'string';
 
 export default (chai, utils) => {
-    let {Assertion} = chai;
+    let { Assertion } = chai;
 
     /**
      * ### chai.createReduxStore
@@ -40,7 +40,7 @@ export default (chai, utils) => {
      * @param initialState (Object): initial state of store
      * @returns {Store<S>|*} extended redux store to be used with chai expect.
      */
-    chai.createReduxStore = ({reducer, middleware, initialState}) => {
+    chai.createReduxStore = ({ reducer, middleware, initialState }) => {
         let reduxStore;
         /**
          * middleware
@@ -56,13 +56,14 @@ export default (chai, utils) => {
             try {
                 result = next(action);
             } catch (e) {
-                console.error('Error when calling middleware. ' +
-                    'Did you forget to setup a middleware?');
+                console.error(
+                    'Error when calling middleware. ' + 'Did you forget to setup a middleware?'
+                );
                 throw e;
             }
             let state = reduxStore.getState();
             reduxStore.__states.push(state);
-            reduxStore.__history.push({action, state: state});
+            reduxStore.__history.push({ action, state: state });
             reduxStore.__listener.forEach(listener => {
                 listener();
             });
@@ -79,29 +80,32 @@ export default (chai, utils) => {
         }
         middlewareAsArray.push(history);
 
-        reduxStore = createStore(storeReducers, initialState, applyMiddleware(...middlewareAsArray));
-        let action = {type: '@@INIT'};
+        reduxStore = createStore(
+            storeReducers,
+            initialState,
+            applyMiddleware(...middlewareAsArray)
+        );
+        let action = { type: '@@INIT' };
         const state = reduxStore.getState();
         Object.assign(reduxStore, {
             __isProxyStore: true,
             __actions: [action],
             __states: [state],
-            __history: [{state, action}],
+            __history: [{ state, action }],
             __listener: [],
             // will notify listener when an action is dispatched
-            __subscribe: function (listener) {
+            __subscribe: function(listener) {
                 this.__listener.push(listener);
                 return () => {
                     this.__listener = this.__listener.filter(l => l !== listener);
                 };
             }
-
         });
         return reduxStore;
     };
 
-    let checkIfIsStoreProxyAndAddFlag = function (flag) {
-        return function () {
+    let checkIfIsStoreProxyAndAddFlag = function(flag) {
+        return function() {
             let obj = this._obj;
             new Assertion(obj.__isProxyStore).to.be.true;
             utils.flag(this, flag, true);
@@ -116,15 +120,15 @@ export default (chai, utils) => {
         }
     };
 
-    let verifyValues = function (expectedState, options = {}) {
+    let verifyValues = function(expectedState, options = {}) {
         // declare and initiate
-        let {compareState, values, messages} = {...defaultOptions, ...options};
+        let { compareState, values, messages } = { ...defaultOptions, ...options };
         const isAsync = utils.flag(this, 'eventually') || false;
         const isChained = utils.flag(this, 'then') || false;
         const lastIndices = () => utils.flag(this, 'lastIndices');
         const chainIndex = utils.flag(this, 'chainIndex') || 0;
 
-        const updateAssertions = (value) => {
+        const updateAssertions = value => {
             const assertions = utils.flag(this, 'assertions') || [];
             assertions[chainIndex] = value;
             utils.flag(this, 'assertions', assertions);
@@ -135,14 +139,17 @@ export default (chai, utils) => {
             let isValid = false;
             if (isChained && chainIndex) {
                 let previousIndices = lastIndices() || [];
-                isValid = !!previousIndices.map(lastIndex => {
-                    let nextIndex = lastIndex + 1;
-                    return values().length > nextIndex
-                        && compareState(values()[nextIndex], expectedState);
-                })
+                isValid = !!previousIndices
+                    .map(lastIndex => {
+                        let nextIndex = lastIndex + 1;
+                        return (
+                            values().length > nextIndex &&
+                            compareState(values()[nextIndex], expectedState)
+                        );
+                    })
                     .find(assertion => assertion === true);
             } else {
-                isValid = !!values().find((state) => compareState(state, expectedState));
+                isValid = !!values().find(state => compareState(state, expectedState));
             }
             return isValid;
         };
@@ -155,15 +162,17 @@ export default (chai, utils) => {
                 indices = previousIndices
                     .filter(lastIndex => {
                         let nextIndex = lastIndex + 1;
-                        return currentValues.length > nextIndex
-                            && compareState(currentValues[nextIndex], expectedState);
+                        return (
+                            currentValues.length > nextIndex &&
+                            compareState(currentValues[nextIndex], expectedState)
+                        );
                     })
                     .map(index => index + 1);
             } else {
                 indices = currentValues
-                    .map((state, index) => ({state, index}))
-                    .filter(({state}) => compareState(state, expectedState))
-                    .map(({index}) => index);
+                    .map((state, index) => ({ state, index }))
+                    .filter(({ state }) => compareState(state, expectedState))
+                    .map(({ index }) => index);
             }
             utils.flag(this, 'lastIndices', indices.map(ix => ix));
         };
@@ -196,7 +205,6 @@ export default (chai, utils) => {
             );
             updateLastIndices();
         }
-
     };
 
     /**
@@ -221,7 +229,7 @@ export default (chai, utils) => {
      *     expect(store).to.eventually.have.state.like({loaded: true});
      *
      */
-    Assertion.addProperty('then', function () {
+    Assertion.addProperty('then', function() {
         checkIfIsStoreProxyAndAddFlag('then').call(this, 'then');
         if (utils.flag(this, 'lastIndices') === undefined) {
             utils.flag(this, 'lastIndices', []);
@@ -249,9 +257,13 @@ export default (chai, utils) => {
      * @param {...String|Array|Object} state
      *
      */
-    Assertion.addChainableMethod('state', function (expectedState) {
-        verifyValues.call(this, expectedState, {values: () => this._obj.__states});
-    }, checkIfIsStoreProxyAndAddFlag('state'));
+    Assertion.addChainableMethod(
+        'state',
+        function(expectedState) {
+            verifyValues.call(this, expectedState, { values: () => this._obj.__states });
+        },
+        checkIfIsStoreProxyAndAddFlag('state')
+    );
 
     /**
      * ### .state.like(state)
@@ -275,7 +287,7 @@ export default (chai, utils) => {
      * @param {...Array|Object|String} states
      *
      */
-    Assertion.addMethod('like', function (expectedState) {
+    Assertion.addMethod('like', function(expectedState) {
         const isState = utils.flag(this, 'state');
         if (isState) {
             verifyValues.call(this, expectedState, {
@@ -320,7 +332,7 @@ export default (chai, utils) => {
      *
      */
     Assertion.addMethod('dispatched', function dispatched(expectedAction) {
-        let action = isString(expectedAction) ? {type: expectedAction} : expectedAction;
+        let action = isString(expectedAction) ? { type: expectedAction } : expectedAction;
         verifyValues.call(this, action, {
             compareState: partialEquals,
             values: () => this._obj.__actions,
@@ -340,7 +352,7 @@ export default (chai, utils) => {
      *     expect(store).to.eventually.have.state({loaded: true}).notify(done);
      *
      */
-    Assertion.addMethod('notify', function (notify = () => {}) {
+    Assertion.addMethod('notify', function(notify = () => {}) {
         let unsubscribe;
         const isDone = () => {
             const assertions = utils.flag(this, 'assertions') || [];
