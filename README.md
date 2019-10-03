@@ -4,7 +4,7 @@ This is an extension plugin for chai assertion library for testing redux stores.
 
 Because testing should be as easy as:
 
-```
+```js
 const store = chai.createReduxStore({reducer, middleware: [thunk]});
 // when
 store.dispatch(fetchData());
@@ -31,7 +31,7 @@ $ npm install --save-dev chai-redux
 
 ## Setup
 
-```
+```js
 import chai from 'chai'
 import chaiRedux from 'chai-redux'
 
@@ -54,7 +54,7 @@ chai.use(chaiRedux)
 
 #### Example
 
-```
+```js
 import chai, { expect } from 'chai';
 import thunk from 'redux-thunk';
 import chaiRedux from 'chai-redux';
@@ -86,7 +86,7 @@ describe('create test store', () => {
 
 Asserts that store state history contains _state_, using deep equal.
 
-```
+```js
 expect(store).to.have.state({loading: false, value: null});
 expect(store).not.to.have.state({loading: false, value: null});
 expect(store).to.have
@@ -98,7 +98,7 @@ expect(store).to.have
 
 Asserts that store state history contains _state_, using partial deep comparison.
 
-```
+```js
 expect(store).to.have.state.like({loading: false});
 expect(store).to.have
     .state.like({value: null})
@@ -109,7 +109,7 @@ expect(store).to.have
 
 Asserts that _state_ is next state in state history.
 
-```
+```js
 expect(store).to.have
     .state({loading: false})
     .then.state({loading: true});
@@ -121,7 +121,7 @@ then.state and then.dispatched cannot be mixed.
 
 Asserts that store action history contains _action_, using partial deep comparison.
 
-```
+```js
 expect(store).to.have
     .dispatched({type: 'LOAD'});
 expect(store).to.have
@@ -132,7 +132,7 @@ expect(store).to.have
 
 Asserts that _state_ is next state in state history.
 
-```
+```js
 expect(store).to.have
     .dispatched('LOAD')
     .then.dispatched({type: 'RESET'});
@@ -146,7 +146,7 @@ Asserts that history contains _state_ or _action_.
 It will wait till store history contains _state_ or _action_.
 Once state is found _done_ is notified.
 
-```
+```js
 expect(store).to.have.eventually
     .state({loading: false, value: null})
     .and.state.like({loading: true})
